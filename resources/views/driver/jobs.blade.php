@@ -40,7 +40,7 @@
                   @else
                     @if($job->status == "starting")
                       <button class="btn btn-success complete" job_id="{{ $job->id }}" onclick="completeJob(this)">Complete</button>
-                      <button class="btn btn-secondary direction" direction="{{ $job->address }}" onclick="jobDirection(this)">Direction</button>
+                      <button class="btn btn-secondary direction" direction="{{ $job->postal_code }}" onclick="jobDirection(this)">Direction</button>
                     @else
                       <button class="btn btn-primary select" job_id="{{ $job->id }}" disabled onclick="selectJob(this)">Select</button>
                     @endif
@@ -367,15 +367,16 @@
         address_info = {
           'job_detail' : driver_jobs[a],
           'address' : driver_jobs[a].address,
+          'postal_code' : driver_jobs[a].postal_code,
           'contact_number' : driver_jobs[a].contact_number
         };
 
         marker_array.push(address_info);
 
-        let address = driver_jobs[a].address;
-        address = address.replace(/(\r\n|\n|\r)/gm, " ");
+        let postal_code = "Singapore "+driver_jobs[a].postal_code;
+        // address = address.replace(/(\r\n|\n|\r)/gm, " ");
 
-        geocoder.geocode( { 'address': address }, function(results, status) {
+        geocoder.geocode( { 'address': postal_code }, function(results, status) {
           if (status == google.maps.GeocoderStatus.OK) {
             if (status != google.maps.GeocoderStatus.ZERO_RESULTS) {
               // map.setCenter(results[0].geometry.location);
@@ -449,10 +450,10 @@
     {
       if(driver_jobs[a].status == "starting")
       {
-        let address = driver_jobs[a].address;
-        address = address.replace(/(\r\n|\n|\r)/gm, " ");
+        let postal_code = "Singapore "+driver_jobs[a].postal_code;
+        // address = address.replace(/(\r\n|\n|\r)/gm, " ");
 
-        geocoder.geocode( { 'address': address }, function(results, status) {
+        geocoder.geocode( { 'address': postal_code }, function(results, status) {
           if (status == google.maps.GeocoderStatus.OK) {
             if (status != google.maps.GeocoderStatus.ZERO_RESULTS) {
 
@@ -537,7 +538,7 @@
         if(job.status == "starting")
         {
           html += '<button class="btn btn-success complete" job_id="'+job.id+'" onclick="completeJob(this)">Complete</button>';
-          html += '<button class="btn btn-secondary direction" location="'+job.address+'" onclick="jobDirection(this)">Direction</button>';
+          html += '<button class="btn btn-secondary direction" location="'+job.postal_code+'" onclick="jobDirection(this)">Direction</button>';
         }
         else
         {

@@ -42,6 +42,8 @@ Route::prefix('admin')->group(function () {
   Route::get('/reset_password', 'DeliveryController@getResetPassword')->name('getResetPassword');
   Route::post('/reset_password', 'DeliveryController@resetPassword')->name('resetPassword');
   Route::get('/reset_success', 'DeliveryController@getResetSuccess')->name('getResetSuccess');
+  Route::post('/getDriverLocation', 'DeliveryController@getDriverLocation')->name('getDriverLocation');
+  Route::post('/importNewJobs', 'DeliveryController@importNewJobs')->name('importNewJobs');
 });
 
 Route::group(['middleware' => ['auth:web'] ], function(){
@@ -57,6 +59,11 @@ Route::group(['middleware' => ['auth:web'] ], function(){
 
     Route::get('/driver', 'DeliveryController@getAdminDriver')->name('getAdminDriver');
     Route::get('/jobs_list', 'DeliveryController@getAdminJobsList')->name('getAdminJobsList');
+    Route::get('/downloadImportJobFormat', 'DeliveryController@downloadImportJobFormat')->name('downloadImportJobFormat');
+    Route::post('/importNewJobs', 'DeliveryController@importNewJobs')->name('importNewJobs');
+    Route::get('/report', 'DeliveryController@getAdminReport')->name('getAdminReport');
+    Route::get('/driver_earning_report', 'DeliveryController@getDriverEarningReport')->name('getDriverEarningReport');
+    Route::get('/driver_earning_detail', 'DeliveryController@getDriverEarningDetail')->name('getDriverEarningDetail');
   });
 
   Route::prefix('order')->group(function () {

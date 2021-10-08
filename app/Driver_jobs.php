@@ -12,6 +12,7 @@ class Driver_jobs extends Model
       'email',
       'contact_number',
       'address',
+      'postal_code',
       'est_delivery_from',
       'est_delivery_to',
       'price',

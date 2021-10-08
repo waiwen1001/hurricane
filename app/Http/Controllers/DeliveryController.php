@@ -9,6 +9,7 @@ use App\Order;
 use App\Tier;
 use App\Settings;
 use App\Driver_jobs;
+use App\Pick_up;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -679,7 +680,7 @@ class DeliveryController extends Controller
     {
       $now = date('Y-m-d H:i:s');
       $today = date('Y-m-d');
-      $driver_jobs = Driver_jobs::whereDate('created_at', $today)->orWhere('status', '<>', 'completed')->get();
+      $driver_jobs = Driver_jobs::whereDate('created_at', $today)->orWhere('status', '<>', 'completed')->orWhere('status', null)->get();
 
       $total_pending = 0;
       $total_accepted = 0;
@@ -700,6 +701,7 @@ class DeliveryController extends Controller
         $driver->total_completed = 0;
         $driver->total_overdue = 0;
         $driver->online = 0;
+        $driver->current_job = null;
 
         if($driver->last_login_at && date('Y-m-d H:i:s', strtotime($driver->last_login_at." +180 seconds")) >= $now)
         {
@@ -745,6 +747,10 @@ class DeliveryController extends Controller
           if($driver_key !== null)
           {
             $driver_list[$driver_key]->total_accepted++;
+            if($job->status == "starting")
+            {
+              $driver_list[$driver_key]->current_job = $job;
+            }
           }
         }
         elseif(date('Y-m-d', strtotime($job->created_at) == $today))
@@ -833,5 +839,318 @@ class DeliveryController extends Controller
           'lng' => $request->lng
         ]);
       }
+    }
+
+    public function getDriverLocation(Request $request)
+    {
+      $driver_list = User::where('user_type', 'driver')->whereDate('last_login_at', date('Y-m-d'))->get();
+
+      foreach($driver_list as $driver)
+      {
+        if($driver->lat && $driver->lng)
+        {
+          $driver->lat = floatval($driver->lat);
+          $driver->lng = floatval($driver->lng);
+        }
+      }
+
+      $response = new \stdClass();
+      $response->message = "Success";
+      $response->error = 0;
+      $response->driver_list = $driver_list;
+
+      return response()->json($response);
+    }
+
+    public function downloadImportJobFormat()
+    {
+      $pick_up_list = Pick_up::get();
+
+      $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+
+      $hidden_sheet = $spreadsheet->setActiveSheetIndex(0);
+      $hidden_sheet->setTitle('Hidden');
+      $hidden_sheet->setSheetState(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet::SHEETSTATE_HIDDEN);
+      $hidden_sheet->setCellValue('A1', "Import Jobs Format");
+      $hidden_sheet->mergeCells("A1:C1");
+      $hidden_sheet->setCellValue('D1', "Document generated at ".date('Y M d h:i A')." by ".Auth::user()->name);
+      $hidden_sheet->mergeCells("D1:F1");
+      $hidden_sheet->setCellValue('A2', "Pick Up List");
+
+      $started_row = 3;
+      foreach($pick_up_list as $pick_up)
+      {
+        $hidden_sheet->setCellValue('A'.$started_row, $pick_up->name);
+        $started_row++;
+      }
+
+      $spreadsheet->createSheet();
+      $sheet = $spreadsheet->setActiveSheetIndex(1);
+      $sheet->setTitle('Jobs list');
+      $sheet->setCellValue('A1', "Import Jobs Format");
+      $sheet->mergeCells("A1:C1");
+      $sheet->setCellValue('D1', "Document generated at ".date('Y M d h:i A')." by ".Auth::user()->name);
+      $sheet->mergeCells("D1:F1");
+
+      $sheet->setCellValue('A2', "Pick Up Location");
+      $sheet->setCellValue('B2', "Customer name *");
+      $sheet->setCellValue('C2', "Email");
+      $sheet->setCellValue('D2', "Contact Number *");
+      $sheet->setCellValue('E2', 'Address*');
+      $sheet->setCellValue('F2', 'Postal Code*');
+      $sheet->setCellValue('G2', "Estimate Delivery From Date\n(YYYY-MM-DD)");
+      $sheet->setCellValue('H2', "Estimate Delivery From Time\n(HH:MM)");
+      $sheet->setCellValue('I2', "Estimate Delivery To Date\n(YYYY-MM-DD)");
+      $sheet->setCellValue('J2', "Estimate Delivery To Time\n(HH:MM)");
+      $sheet->setCellValue('K2', "Wallet Value *");
+      $sheet->setCellValue('L2', "Remarks");
+
+      $sheet->getColumnDimension('A')->setWidth(20);
+      $sheet->getColumnDimension('B')->setWidth(20);
+      $sheet->getColumnDimension('C')->setWidth(20);
+      $sheet->getColumnDimension('D')->setWidth(20);
+      $sheet->getColumnDimension('E')->setWidth(20);
+      $sheet->getColumnDimension('F')->setWidth(20);
+      $sheet->getColumnDimension('G')->setWidth(27);
+      $sheet->getColumnDimension('H')->setWidth(27);
+      $sheet->getColumnDimension('I')->setWidth(27);
+      $sheet->getColumnDimension('J')->setWidth(27);
+      $sheet->getColumnDimension('K')->setWidth(20);
+      $sheet->getColumnDimension('L')->setWidth(20);
+
+      $sheet->getRowDimension('2')->setRowHeight(35);
+      $sheet->getStyle("A2:L2")->getAlignment()->setWrapText(true);
+
+      for($a = 3; $a <= 100; $a++)
+      {
+        $validation = $sheet->getCell("A".$a)->getDataValidation();
+        $validation->setType( \PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST );
+        $validation->setErrorStyle( \PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION );
+        $validation->setAllowBlank(true);
+        $validation->setShowDropDown(true);
+        $validation->setFormula1('Hidden!$A$3:$A$'.(count($pick_up_list) + 2));
+      }
+
+      $sheet->getStyle('A2:L2')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+      
+      $writer = new Xlsx($spreadsheet);
+      $writer->save('storage/format/import_job_format.xlsx');
+
+      return response()->download('storage\format\import_job_format.xlsx');
+    }
+
+    public function importNewJobs(Request $request)
+    {
+      $file = $request->file('file');
+      if($file)
+      {
+        $filename = $file->getClientOriginalName();
+        $path = $file->store('temp');
+        $inputFileName = substr(Storage::url($path), 1);
+
+        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+        $spreadsheet = $reader->load($inputFileName);
+
+        $sheet = $spreadsheet->getSheetByName("Jobs list");
+        $sheet->setCellValue('M2', "Result");
+        $user = Auth::user();
+        $today = date('Y-m-d');
+
+        if($sheet)
+        {
+          $pick_up_list = Pick_up::get();
+
+          $sheet_rows = $sheet->getHighestDataRow();
+          $sheet->getStyle('A3'.':M'.$sheet_rows)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFFFFF');
+
+          for($a = 3; $a <= $sheet_rows; $a++)
+          {
+            $pick_up = null;
+
+            $pick_up_location = $sheet->getCell("A".$a)->getValue();
+            $name = $sheet->getCell("B".$a)->getValue();
+            $email = $sheet->getCell("C".$a)->getValue();
+            $contact_number = $sheet->getCell("D".$a)->getValue();
+            $address = $sheet->getCell("E".$a)->getValue();
+            $postal_code = $sheet->getCell("F".$a)->getValue();
+            $est_delivery_from_date = $sheet->getCell("G".$a)->getValue();
+            $est_delivery_from_time = $sheet->getCell("H".$a)->getValue();
+            $est_delivery_to_date = $sheet->getCell("I".$a)->getValue();
+            $est_delivery_to_time = $sheet->getCell("J".$a)->getValue();
+            $wallet = $sheet->getCell("K".$a)->getValue();
+            $remarks = $sheet->getCell("L".$a)->getValue();
+
+            if($pick_up_location)
+            {
+              foreach($pick_up_list as $pick_up_detail)
+              {
+                if($pick_up_detail->name == $pick_up_location)
+                {
+                  $pick_up = $pick_up_detail;
+                  break;
+                }
+              }
+            }
+
+            if(!$pick_up)
+            {
+              $sheet->setCellValue('M'.$a, "Pick up location not found.");
+              $sheet->getStyle('A'.$a.':M'.$a)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('F2DCDB');
+            }
+            elseif(!$name)
+            {
+              $sheet->setCellValue('M'.$a, "Customer name cannot be empty.");
+              $sheet->getStyle('A'.$a.':M'.$a)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('F2DCDB');
+            }
+            elseif(!$contact_number)
+            {
+              $sheet->setCellValue('M'.$a, "Customer contact number cannot be empty.");
+              $sheet->getStyle('A'.$a.':M'.$a)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('F2DCDB');
+            }
+            elseif(!$address)
+            {
+              $sheet->setCellValue('M'.$a, "Customer address cannot be empty.");
+              $sheet->getStyle('A'.$a.':M'.$a)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('F2DCDB');
+            }
+            elseif(!$postal_code)
+            {
+              $sheet->setCellValue('M'.$a, "Address postal code cannot be empty.");
+              $sheet->getStyle('A'.$a.':M'.$a)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('F2DCDB');
+            }
+            elseif(!$wallet)
+            {
+              $sheet->setCellValue('M'.$a, "Wallet value cannot be empty.");
+              $sheet->getStyle('A'.$a.':M'.$a)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('F2DCDB');
+            }
+            else
+            {
+              $est_from = null;
+              $est_to = null;
+
+              if($est_delivery_from_date && $est_delivery_from_time)
+              {
+                $est_from_date = ($est_delivery_from_date - 25569) * 86400;
+                $est_from_date = date('Y-m-d', $est_from_date);
+                $est_from_time = $this->getExcelTime($est_delivery_from_time);
+
+                $est_from = $est_from_date." ".$est_from_time;
+              }
+
+              if($est_delivery_to_date && $est_delivery_to_time)
+              {
+                $est_to_date = ($est_delivery_to_date - 25569) * 86400;
+                $est_to_date = date('Y-m-d', $est_to_date);
+                $est_to_time = $this->getExcelTime($est_delivery_to_time);
+
+                $est_to = $est_to_date." ".$est_to_time;
+              }
+
+              Driver_jobs::create([
+                'name' => $name,
+                'email' => $email,
+                'contact_number' => $contact_number,
+                'address' => $address,
+                'postal_code' => $postal_code,
+                'est_delivery_from' => $est_from,
+                'est_delivery_to' => $est_to,
+                'price' => $wallet,
+                'pick_up_id' => $pick_up->id,
+                'pick_up' => $pick_up->name,
+                'remarks' => $remarks,
+                'job_date' => $today,
+                'created_by' => $user->name,
+                'created_by_id' => $user->id
+              ]);
+
+              $sheet->setCellValue('M'.$a, "Created.");
+              $sheet->getStyle('A'.$a.':M'.$a)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFFFFF');
+            }
+          }
+
+          $sheet->getStyle('A2:M'.$sheet_rows)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+          $writer = new Xlsx($spreadsheet);
+          $writer->save('storage/format/import_job_format_result.xlsx');
+
+          return response()->download('storage/format/import_job_format_result.xlsx');
+        }
+      }
+    }
+
+    public function getExcelTime($time)
+    {
+      $total = $time * 24; //multiply by the 24 hours
+      $hours = floor($total); //Gets the natural number part
+      $minute_fraction = $total - $hours; //Now has only the decimal part
+      $minutes = $minute_fraction * 60; //Get the number of minutes
+      $display = $hours . ":" . ($minutes < 10 ? substr("0".$minutes, 0, 2) : substr($minutes, 0, 2)). ":00";
+
+      return $display;
+    }
+
+    public function getAdminReport()
+    {
+      return view('delivery.report');
+    }
+
+    public function getDriverEarningReport()
+    {
+      $date_from = date("Y-m-01");
+      $date_to = date('Y-m-d');
+
+      if(isset($_GET['date_from']))
+      {
+        $date_from = date('Y-m-d', strtotime($_GET['date_from']));
+      }
+
+      if(isset($_GET['date_to']))
+      {
+        $date_to = date('Y-m-d', strtotime($_GET['date_to']));
+      }
+
+      $driver_list = User::where('user_type', 'driver')->get();
+      $driver_jobs = Driver_jobs::whereBetween('job_date', [$date_from, $date_to])->orderBy('driver_id')->get();
+
+      $total = 0;
+      foreach($driver_jobs as $job)
+      {
+        if($job->completed == 1)
+          $total += $job->price;
+      }
+
+      foreach($driver_list as $driver)
+      {
+        $driver->total = 0;
+        $driver->total_completed = 0;
+        $driver_jobs_list = array();
+        foreach($driver_jobs as $job)
+        {
+          if($driver->id == $job->driver_id)
+          {
+            if($job->completed == 1)
+            {
+              $driver->total += $job->price;
+              $driver->total_completed++;
+            }
+            array_push($driver_jobs_list, $job);
+          }
+        }
+
+        $driver->jobs = $driver_jobs_list;
+      }
+
+      return view('delivery.earning_report', compact('date_from', 'date_to', 'driver_list', 'total'));
+    }
+
+    public function getDriverEarningDetail()
+    {
+      $date_from = $_GET['date_from'];
+      $date_to = $_GET['date_to'];
+      $driver_id = $_GET['driver_id'];
+
+      $driver = User::where('id', $driver_id)->first();
+      $driver_jobs = Driver_jobs::whereBetween('job_date', [$date_from, $date_to])->where('driver_id', $driver_id)->get();
+
+      return view('delivery.earning_detail', compact('date_from', 'date_to', 'driver_jobs', 'driver'));
     }
 }

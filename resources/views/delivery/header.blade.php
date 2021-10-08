@@ -25,6 +25,9 @@
             <div class="menu_btn">
               <a href="{{ route('getAdminJobsList') }}">Jobs List</a>
             </div>
+            <div class="menu_btn">
+              <a href="{{ route('getAdminReport') }}">Report</a>
+            </div>
           @endif
 
           <div class="menu_btn">

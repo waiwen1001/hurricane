@@ -275,7 +275,7 @@ class DriverController extends Controller
       }
       elseif($admin == 1)
       {
-        $driver_jobs = Driver_jobs::whereBetween('created_at', [$date_from, $date_to])->get();
+        $driver_jobs = Driver_jobs::whereBetween('created_at', [($date_from." 00:00:00"), ($date_to." 23:59:59")])->get();
       }
       
       $driver_status_list = $this->driverStatus();
@@ -286,7 +286,11 @@ class DriverController extends Controller
 
       foreach($driver_jobs as $job)
       {
-        $job->color = "#ccc";
+        $job->color = "#fff";
+        if(!$job->status)
+        {
+          $job->status = "New job";
+        }
         $job->est_delivery_from_text = "";
         $job->est_delivery_to_text = "";
         $job->price_text = number_format($job->price, 2);
@@ -360,8 +364,14 @@ class DriverController extends Controller
         ],
         [
           'status' => "starting",
-          'color' => "#8bc34a",
+          'color' => "#00bcd4",
           'have_job' => 1,
+          'count' => 0
+        ],
+        [
+          'status' => "completed",
+          'color' => "#8bc34a",
+          'have_job' => null,
           'count' => 0
         ]
       ];

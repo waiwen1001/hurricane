@@ -104,3 +104,5 @@ table.custom td { padding: 10px; }
 
 tr.red { background-color: rgb(255 0 0 / 10%) !important; }
 tr.ember { background-color: rgb(255 87 34 / 10%) !important; }
+
+.report_count { margin: 20px; border: 1px solid #ccc; padding: 10px 30px; display: flex; align-items: center; border-radius: 5px; }

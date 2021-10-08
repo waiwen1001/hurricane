@@ -97,9 +97,7 @@
                 update = true;
                 my_pos = current_lat_lng;
 
-                console.log("here?");
                 my_marker.setMap(null);
-
                 my_marker = new google.maps.Marker({
                   position: current_lat_lng,
                   map: map,
