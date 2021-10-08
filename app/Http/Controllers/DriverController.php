@@ -47,7 +47,6 @@ class DriverController extends Controller
 
     public function getDriverJobs()
     {
-      $user = Auth::user();
       $driver_jobs_info = $this->driverJobsList();
       $driver_status_list = $driver_jobs_info->driver_status_list;
 
@@ -56,7 +55,7 @@ class DriverController extends Controller
       $total_urgent_hours_two = $driver_jobs_info->total_urgent_hours_two;
       $total_urgent_hours_four = $driver_jobs_info->total_urgent_hours_four;
 
-      return view('driver.jobs', compact('user', 'driver_jobs', 'have_job', 'driver_status_list', 'total_urgent_hours_two', 'total_urgent_hours_four'));
+      return view('driver.jobs', compact('driver_jobs', 'have_job', 'driver_status_list', 'total_urgent_hours_two', 'total_urgent_hours_four'));
     }
 
     public function submitPickUp(Request $request)

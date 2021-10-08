@@ -14,7 +14,7 @@
                 <label>Name</label>
               </div>
               <div class="col-8">
-                <input type="text" class="form-control @error('name') is-invalid @enderror" name="name" autocomplete="off" required autofocus />
+                <input type="text" class="form-control @error('name') is-invalid @enderror" name="name" autocomplete="off" required autofocus value="{{ old('name') }}" />
                 @error('name')
                   <span class="invalid-feedback" role="alert">
                     <strong>{{ $message }}</strong>
@@ -27,7 +27,7 @@
                 <label>Username</label>
               </div>
               <div class="col-8">
-                <input type="text" class="form-control @error('username') is-invalid @enderror" name="username" autocomplete="off" required />
+                <input type="text" class="form-control @error('username') is-invalid @enderror" name="username" autocomplete="off" required value="{{ old('username') }}" />
                 @error('username')
                   <span class="invalid-feedback" role="alert">
                     <strong>{{ $message }}</strong>
@@ -40,7 +40,7 @@
                 <label>Email</label>
               </div>
               <div class="col-8">
-                <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" autocomplete="off" required />
+                <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" autocomplete="off" required  value="{{ old('email') }}" />
                 @error('email')
                   <span class="invalid-feedback" role="alert">
                     <strong>{{ $message }}</strong>
@@ -70,9 +70,21 @@
                 <input type="password" class="form-control" name="password_confirmation" required />
               </div>
             </div>
+
+            <div class="row form-group">
+              <div class="col-4">
+                <label>User Type</label>
+              </div>
+              <div class="col-8">
+                <select class="form-control" name="user_type">
+                  <option value="delivery">Admin</option>
+                  <option value="driver">Driver</option>
+                  <option value="restaurant">Restaurant</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
-        <input type="hidden" name="user_type" value="delivery" />
         <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>
       </form>
     </div>

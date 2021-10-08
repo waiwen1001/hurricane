@@ -73,6 +73,10 @@ class RegisterController extends Controller
         {
           $this->redirectTo = RouteServiceProvider::RESTAURANT;
         }
+        elseif($data['user_type'] == "driver")
+        {
+          $this->redirectTo = RouteServiceProvider::DRIVER;
+        }
 
         return User::create([
             'user_type' => $data['user_type'],

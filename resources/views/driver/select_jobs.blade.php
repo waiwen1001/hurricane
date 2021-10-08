@@ -5,7 +5,7 @@
 @include('driver.header')
 
 <div class="container" style="padding-top: 10px;">
-  <form method="POST" action="{{ route('driverAcceptJobs') }}">
+  <form method="POST" action="{{ route('driverAcceptJobs') }}" id="accept_job_form">
     @csrf
     <div class="row">
       <div class="col-12">
@@ -29,7 +29,7 @@
         </div>
       @endforeach
     </div>
-    <button class="btn btn-success" type="submit" style="margin-top: 15px;">Accept Jobs</button>
+    <button class="btn btn-success" type="button" id="accept_job_btn" style="margin-top: 15px;">Accept Jobs</button>
   </form>
 </div>
 
@@ -47,6 +47,18 @@
       {
         checkbox.iCheck('check');
         $(this).addClass("selected");
+      }
+    });
+
+    $("#accept_job_btn").click(function(e){
+      if($("input[name='accept_job[]']:checked").length == 0)
+      {
+        showError("Please select jobs before you proceed.", 0);
+        return;
+      }
+      else
+      {
+        $("#accept_job_form").submit();
       }
     });
   });

@@ -93,7 +93,7 @@ class DeliveryController extends Controller
         return back()->withErrors(['email' => 'User not found']);
       }
 
-      return view('delivery.reset_password', compact('user'));
+      return view('delivery.reset_password');
     }
 
     public function resetPassword(Request $request)
@@ -145,7 +145,6 @@ class DeliveryController extends Controller
 
     public function getAdminRestaurant()
     {
-      $user = Auth::user();
       $restaurant_list = Restaurant::orderBy('name')->get();
       $tier_list = tier_list();
 
@@ -164,7 +163,7 @@ class DeliveryController extends Controller
       $date_start = date('Y-m-01', strtotime(now()));
       $date_end = date('Y-m-d');
 
-      return view('delivery.index', compact('user', 'restaurant_list', 'tier_list', 'active', 'date_start', 'date_end'));
+      return view('delivery.index', compact('restaurant_list', 'tier_list', 'active', 'date_start', 'date_end'));
     }
 
     public function getOrderDetail($id)
@@ -201,7 +200,7 @@ class DeliveryController extends Controller
       $date_start = date('Y-m-01');
       $date_end = date('Y-m-d');
 
-      return view('restaurant.index', compact('user', 'restaurant_detail', 'date_start', 'date_end'));
+      return view('restaurant.index', compact('restaurant_detail', 'date_start', 'date_end'));
     }
 
     public function createRestaurant(Request $request)
@@ -680,7 +679,6 @@ class DeliveryController extends Controller
     {
       $now = date('Y-m-d H:i:s');
       $today = date('Y-m-d');
-      $user = Auth::user();
       $driver_jobs = Driver_jobs::whereDate('created_at', $today)->orWhere('status', '<>', 'completed')->get();
 
       $total_pending = 0;
@@ -789,12 +787,11 @@ class DeliveryController extends Controller
         }
       }
 
-      return view('delivery.delivery_index', compact('user', 'total_completed', 'total_accepted', 'total_pending', 'driver_jobs', 'total_overdue', 'urgent_two', 'urgent_four', 'now', 'driver_list'));
+      return view('delivery.delivery_index', compact('total_completed', 'total_accepted', 'total_pending', 'driver_jobs', 'total_overdue', 'urgent_two', 'urgent_four', 'now', 'driver_list'));
     }
 
     public function getAdminJobsList()
     {
-      $user = Auth::user();
       $today = date('Y-m-d');
 
       $date_from = $today;
@@ -812,7 +809,7 @@ class DeliveryController extends Controller
 
       $driver_jobs = app('App\Http\Controllers\DriverController')->driverJobsList(0, 1, $date_from, $date_to);
 
-      return view('delivery.jobs_list', compact('user', 'date_from', 'date_to', 'driver_jobs'));
+      return view('delivery.jobs_list', compact('date_from', 'date_to', 'driver_jobs'));
     }
 
     public function checkOnline(Request $request)
