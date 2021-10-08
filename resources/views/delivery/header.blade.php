@@ -26,6 +26,10 @@
               <a href="{{ route('getAdminJobsList') }}">Jobs List</a>
             </div>
           @endif
+
+          <div class="menu_btn">
+            <a href="{{ route('manual_logout') }}">Logout</a>
+          </div>
         </div>
       </div>
     </div>
