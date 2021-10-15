@@ -1174,7 +1174,7 @@ class DeliveryController extends Controller
       );
 
       if(!in_array($_SERVER['REMOTE_ADDR'], $whitelist)){
-        return 'public/storage'.$path;
+        return 'public/storage/'.$path;
       }
       else
       {
