@@ -934,9 +934,10 @@ class DeliveryController extends Controller
       $sheet->getStyle('A2:L2')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
       
       $writer = new Xlsx($spreadsheet);
-      $writer->save('storage/format/import_job_format.xlsx');
 
-      return response()->download('storage\format\import_job_format.xlsx');
+      $download_path = substr(Storage::url('format/import job format.xlsx'), 1);
+      $writer->save($download_path);
+      return response()->download($download_path);
     }
 
     public function importNewJobs(Request $request)
@@ -1070,9 +1071,10 @@ class DeliveryController extends Controller
           $sheet->getStyle('A2:M'.$sheet_rows)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
           $writer = new Xlsx($spreadsheet);
-          $writer->save('storage/format/import_job_format_result.xlsx');
+          $download_path = substr(Storage::url('format/import job format result.xlsx'), 1);
+          $writer->save($download_path);
 
-          return response()->download('storage/format/import_job_format_result.xlsx');
+          return response()->download($download_path);
         }
       }
     }
