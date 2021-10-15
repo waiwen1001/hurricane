@@ -949,9 +949,6 @@ class DeliveryController extends Controller
         $filename = $file->getClientOriginalName();
         $path = $file->store('temp');
         $inputFileName = $this->storagePath($path);
-
-        dd($inputFileName);
-
         $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
         $spreadsheet = $reader->load($inputFileName);
 
@@ -959,6 +956,8 @@ class DeliveryController extends Controller
         $sheet->setCellValue('M2', "Result");
         $user = Auth::user();
         $today = date('Y-m-d');
+
+        dd($sheet);
         if($sheet)
         {
           $pick_up_list = Pick_up::get();
@@ -1175,11 +1174,11 @@ class DeliveryController extends Controller
       );
 
       if(!in_array($_SERVER['REMOTE_ADDR'], $whitelist)){
-        dd("not local");
+        return 'public/storage'.$path;
       }
       else
       {
-        dd($_SERVER['REMOTE_ADDR']);
+        return 'storage/'.$path;
       }
     }
 }
