@@ -948,7 +948,7 @@ class DeliveryController extends Controller
       {
         $filename = $file->getClientOriginalName();
         $path = $file->store('temp');
-        $inputFileName = substr(Storage::url($path), 1);
+        $inputFileName = $this->storagePath($path);
 
         dd($inputFileName);
 
@@ -1164,5 +1164,22 @@ class DeliveryController extends Controller
       $content = ob_get_contents();
       ob_end_clean();
       Storage::disk('local')->put($path, $content); 
+    }
+
+    public function storagePath($path)
+    {
+      $whitelist = array(
+        '127.0.0.1',
+        '::1',
+        'localhost'
+      );
+
+      if(!in_array($_SERVER['REMOTE_ADDR'], $whitelist)){
+        dd("not local");
+      }
+      else
+      {
+        dd($_SERVER['REMOTE_ADDR']);
+      }
     }
 }
