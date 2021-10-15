@@ -950,6 +950,8 @@ class DeliveryController extends Controller
         $path = $file->store('temp');
         $inputFileName = substr(Storage::url($path), 1);
 
+        dd($inputFileName);
+
         $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
         $spreadsheet = $reader->load($inputFileName);
 
@@ -957,7 +959,6 @@ class DeliveryController extends Controller
         $sheet->setCellValue('M2', "Result");
         $user = Auth::user();
         $today = date('Y-m-d');
-
         if($sheet)
         {
           $pick_up_list = Pick_up::get();
