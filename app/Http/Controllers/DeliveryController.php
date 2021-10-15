@@ -483,7 +483,7 @@ class DeliveryController extends Controller
     {
       $order_list = Order::whereBetween('created_at', [$request->export_start, $request->export_end])->get();
       Storage::makeDirectory('public/admin', 0775, true);
-      $download_path = substr(Storage::url('admin/order list.xlsx'), 1);
+      $download_path = 'admin/order list.xlsx';
 
       $this->exportOrderExcel($order_list, $download_path);
       return response()->download($download_path);
@@ -494,10 +494,10 @@ class DeliveryController extends Controller
       $order_list = Order::whereBetween('created_at', [$request->export_start, $request->export_end])->where('restaurant_id', $request->restaurant_id)->get();
 
       Storage::makeDirectory('public/restaurant', 0775, true);
-      $download_path = substr(Storage::url('restaurant/order list.xlsx'), 1);
+      $download_path = 'format/import job format result.xlsx';
 
       $this->exportOrderExcel($order_list, $download_path);
-      return response()->download($download_path);
+      return Storage::download($download_path);
     }
 
     public function exportOrderExcel($order_list, $download_path)
@@ -548,13 +548,13 @@ class DeliveryController extends Controller
       $sheet->getColumnDimension('J')->setWidth(20);
 
       $writer = new Xlsx($spreadsheet);
-      $writer->save($download_path);
+      $path = "format/import job format result.xlsx";
+      $this->storeExcel($write, $path);
     }
 
     public function downloadImportFormat(Request $request)
     {
       Storage::makeDirectory('public/format', 0775, true);
-      $download_path = substr(Storage::url('format/order list format.xlsx'), 1);
 
       $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
 
@@ -588,9 +588,10 @@ class DeliveryController extends Controller
       $sheet->getColumnDimension('G')->setWidth(30);
 
       $writer = new Xlsx($spreadsheet);
-      $writer->save($download_path);
 
-      return response()->download($download_path);
+      $path = "format/order list format.xlsx";
+      $this->storeExcel($write, $path);
+      return Storage::download($path);
     }
 
     public function importRestaurantOrder(Request $request)
@@ -935,9 +936,9 @@ class DeliveryController extends Controller
       
       $writer = new Xlsx($spreadsheet);
 
-      $download_path = substr(Storage::url('format/import job format.xlsx'), 1);
-      $writer->save($download_path);
-      return response()->download($download_path);
+      $path = "format/import job format.xlsx";
+      $this->storeExcel($write, $path);
+      return Storage::download($path);
     }
 
     public function importNewJobs(Request $request)
@@ -1071,10 +1072,9 @@ class DeliveryController extends Controller
           $sheet->getStyle('A2:M'.$sheet_rows)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
           $writer = new Xlsx($spreadsheet);
-          $download_path = substr(Storage::url('format/import job format result.xlsx'), 1);
-          $writer->save($download_path);
-
-          return response()->download($download_path);
+          $path = "format/import job format result.xlsx";
+          $this->storeExcel($writer, $path);
+          return Storage::download($path);
         }
       }
     }
@@ -1154,5 +1154,14 @@ class DeliveryController extends Controller
       $driver_jobs = Driver_jobs::whereBetween('job_date', [$date_from, $date_to])->where('driver_id', $driver_id)->get();
 
       return view('delivery.earning_detail', compact('date_from', 'date_to', 'driver_jobs', 'driver'));
+    }
+
+    public function storeExcel($write, $path)
+    {
+      ob_start();
+      $writer->save('php://output');
+      $content = ob_get_contents();
+      ob_end_clean();
+      Storage::disk('local')->put($path, $content); 
     }
 }
