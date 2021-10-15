@@ -549,7 +549,7 @@ class DeliveryController extends Controller
 
       $writer = new Xlsx($spreadsheet);
       $path = "format/import job format result.xlsx";
-      $this->storeExcel($write, $path);
+      $this->storeExcel($writer, $path);
     }
 
     public function downloadImportFormat(Request $request)
@@ -590,7 +590,7 @@ class DeliveryController extends Controller
       $writer = new Xlsx($spreadsheet);
 
       $path = "format/order list format.xlsx";
-      $this->storeExcel($write, $path);
+      $this->storeExcel($writer, $path);
       return Storage::download($path);
     }
 
@@ -937,7 +937,7 @@ class DeliveryController extends Controller
       $writer = new Xlsx($spreadsheet);
 
       $path = "format/import job format.xlsx";
-      $this->storeExcel($write, $path);
+      $this->storeExcel($writer, $path);
       return Storage::download($path);
     }
 
@@ -1156,7 +1156,7 @@ class DeliveryController extends Controller
       return view('delivery.earning_detail', compact('date_from', 'date_to', 'driver_jobs', 'driver'));
     }
 
-    public function storeExcel($write, $path)
+    public function storeExcel($writer, $path)
     {
       ob_start();
       $writer->save('php://output');
