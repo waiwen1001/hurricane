@@ -35,8 +35,9 @@ Route::get('/', function () {
 
 Auth::routes();
 
+Route::get('/register_account', 'DeliveryController@getAdminRegister')->name('getAdminRegister');
+
 Route::prefix('admin')->group(function () {
-  Route::get('/register', 'DeliveryController@getAdminRegister')->name('getAdminRegister');
   Route::get('/reset', 'DeliveryController@getAdminReset')->name('getAdminReset');
   Route::post('/send_reset', 'DeliveryController@sendReset')->name('sendReset');
   Route::get('/reset_password', 'DeliveryController@getResetPassword')->name('getResetPassword');
@@ -91,5 +92,9 @@ Route::group(['middleware' => ['auth:web'] ], function(){
 });
 
 Route::get('/manual_logout', 'HomeController@logout')->name('manual_logout');
+
+Route::get('/storage_link', function () {
+    Artisan::call('storage:link');
+});
 
 

@@ -9,15 +9,14 @@
     <div class="col-12">
       <form method="POST" action="{{ route('importNewJobs') }}" enctype="multipart/form-data">
         @csrf
-          <div>
-            <label>New Jobs File</label>
-            <input type="file" name="file" accept=".xlsx, .xlsm, .csv, .xls" required />
-          </div>
-
-          <button type="submit" class="btn btn-success" style="margin-top: 1rem;">Submit</button>
-
-          <a href="{{ route('downloadImportJobFormat') }}" type="button" class="btn btn-primary" style="margin-top: 1rem; float: right;">Download Format</a>
+        <div>
+          <label>New Jobs File</label>
+          <input type="file" name="file" accept=".xlsx, .xlsm, .csv, .xls" required />
         </div>
+
+        <button type="submit" class="btn btn-success" style="margin-top: 1rem;">Submit</button>
+
+        <a href="{{ route('downloadImportJobFormat') }}" type="button" class="btn btn-primary" style="margin-top: 1rem; float: right;">Download Format</a>
       </form>
     </div>
   </div>
@@ -45,10 +44,10 @@
   </form>
 </div>
 
-<div style="margin: 0 20px 20px 20px; display: inline-block;">
+<div class="container-fluid">
   <div class="row">
-    <div class="col-12">
-      <div class="jobs_box">
+    <div class="col-md-12">
+      <div class="jobs_box" style="margin: 5px;">
         <table id="jobs_table" class="table table-bordered table-striped" cellspacing="0" width="100%">
           <thead>
             <th></th>

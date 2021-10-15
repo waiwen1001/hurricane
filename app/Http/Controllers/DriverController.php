@@ -30,7 +30,7 @@ class DriverController extends Controller
     public function getDriverSelectJobs()
     {
       $user = Auth::user();
-      $driver_status = Driver_status::where('user_id', $user->id)->where('completed', null)->first();
+      $driver_status = Driver_status::where('user_id', $user->id)->where('completed', null)->orderBy('id', 'desc')->first();
 
       if(!$driver_status)
       {

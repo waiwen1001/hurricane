@@ -23,8 +23,22 @@
               {{ $job->name }}
             </h5>
             <label>Address : {{ $job->address }}</label><br>
-            <label>Deliver at : {{ date('d M Y h:i A', strtotime($job->delivery_date_time)) }}</label><br>
+            <label>Deliver from  : 
+              @if($job->est_delivery_from && $job->est_delivery_to)
+                {{ date('d M Y h:i A', strtotime($job->est_delivery_from)) }}
+              @else
+                -
+              @endif
+            </label>
+            <label>Deliver to  : 
+              @if($job->est_delivery_from && $job->est_delivery_to)
+                {{ date('d M Y h:i A', strtotime($job->est_delivery_to)) }}
+              @else
+                -
+              @endif
+            </label>
             <label>Customer remarks : {{ $job->remarks }}</label>
+            <label>Wallet value : $S {{ number_format($job->price, 2) }}</label>
           </div>
         </div>
       @endforeach

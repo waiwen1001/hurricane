@@ -61,7 +61,7 @@
             </div>
           </div>
         </div>
-        <input type="hidden" name="reset_user_email" value="{{ $user->email }}" />
+        <input type="hidden" name="reset_user_email" value="{{ $reset_user->email }}" />
         <button type="submit" class="btn btn-primary" style="width: 100%;">Reset</button>
         <a href="{{ route('login') }}" class="btn btn-secondary" style="width: 100%; margin-top: 15px;">Back to login page</a>
       </form>

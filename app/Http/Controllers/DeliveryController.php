@@ -88,13 +88,13 @@ class DeliveryController extends Controller
 
     public function getResetPassword(Request $request)
     {
-      $user = User::where('id', $request->user_id)->first();
-      if(!$user)
+      $reset_user = User::where('id', $request->user_id)->first();
+      if(!$reset_user)
       {
         return back()->withErrors(['email' => 'User not found']);
       }
 
-      return view('delivery.reset_password');
+      return view('delivery.reset_password', compact('reset_user'));
     }
 
     public function resetPassword(Request $request)

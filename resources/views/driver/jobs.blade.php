@@ -101,7 +101,7 @@
   </div>
 
   <div class="modal fade" id="completeModal" role="dialog" aria-labelledby="completeModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-    <div class="modal-dialog" role="document" style="width: 1200px;">
+    <div class="modal-dialog" role="document" style="width: 1200px; max-width: 95%;">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="completeModalLabel">Delivered</h5>
@@ -116,7 +116,7 @@
               <tr>
                 <td>Name</td>
                 <td>:</td>
-                <td>Plan A</td>
+                <td style="min-width: 250px;">Plan A</td>
               </tr>
               <tr>
                 <td>Address</td>
@@ -132,11 +132,6 @@
                 <td>Expected delivery date time</td>
                 <td>:</td>
                 <td>A</td>
-              </tr>
-              <tr>
-                <td colspan="3">
-                  <p></p>
-                </td>
               </tr>
               <tr>
                 <td colspan="3">
@@ -244,7 +239,7 @@
     });
 
     $("#submit_complete_job").click(function(){
-      if($("input[name='file_pdo[]']").val() == "")
+      if($("input[name='file_pod[]']").val() == "" || !$("input[name='file_pod[]']").val())
       {
         showError("POD images is compulsory.", 0);
         return;
