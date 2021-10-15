@@ -607,7 +607,7 @@ class DeliveryController extends Controller
       $path = $file->storeAs('public/restaurant/import', $new_file_name);
 
       $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
-      $path = substr(Storage::url('restaurant/import/'.$new_file_name), 1);
+      $path = 'storage/restaurant/import/'.$new_file_name;
       $spreadsheet = $reader->load($path);
 
       $hidden_sheet = $spreadsheet->getSheetByName("Hidden");
@@ -948,7 +948,7 @@ class DeliveryController extends Controller
       {
         $filename = $file->getClientOriginalName();
         $path = $file->store('temp');
-        $inputFileName = $this->storagePath($path);
+        $inputFileName = 'storage/'.$path;
         $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
         $spreadsheet = $reader->load($inputFileName);
 
@@ -956,8 +956,6 @@ class DeliveryController extends Controller
         $sheet->setCellValue('M2', "Result");
         $user = Auth::user();
         $today = date('Y-m-d');
-
-        dd($sheet);
         if($sheet)
         {
           $pick_up_list = Pick_up::get();
@@ -1163,22 +1161,5 @@ class DeliveryController extends Controller
       $content = ob_get_contents();
       ob_end_clean();
       Storage::disk('local')->put($path, $content); 
-    }
-
-    public function storagePath($path)
-    {
-      $whitelist = array(
-        '127.0.0.1',
-        '::1',
-        'localhost'
-      );
-
-      if(!in_array($_SERVER['REMOTE_ADDR'], $whitelist)){
-        return 'public/storage/'.$path;
-      }
-      else
-      {
-        return 'storage/'.$path;
-      }
     }
 }
