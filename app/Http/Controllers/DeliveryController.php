@@ -1202,6 +1202,25 @@ class DeliveryController extends Controller
           $driver->lat_lng = array();
         }
       }
+      else
+      {
+        $j_key = array();
+        foreach($driver_list as $driver)
+        {
+          $driver_jobs = array();
+          foreach($job_list as $key => $job)
+          {
+            if(!in_array($key, $j_key))
+            {
+              array_push($driver_jobs, $job);
+              array_push($j_key, $key);
+
+              $driver->job_list = $driver_jobs;
+              break;
+            }
+          }
+        }
+      }
       
       return view('delivery.autoroute', compact('job_list', 'driver_list'));
     }
