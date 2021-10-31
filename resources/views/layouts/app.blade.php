@@ -32,6 +32,7 @@
 
     <!-- signature -->
     <link rel="stylesheet" href="{{ asset('assets/signature/css/signature-pad.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/jquery-ui/jquery-ui.css') }}">
 
     <!-- Fontawesome -->
     <script src="https://kit.fontawesome.com/e5dc55166e.js" crossorigin="anonymous"></script>
@@ -53,6 +54,7 @@
     <script src="{{ asset('assets/signature/js/signature_pad.umd.js') }}"></script>
     <!-- signature -->
     <script src="{{ asset('assets/select2/js/select2.full.min.js') }}"></script>
+    <script src="{{ asset('assets/jquery-ui/jquery-ui.js') }}"></script>
     <script src="{{ asset('assets/js/main.js') }}"></script>
 
   </head>

@@ -1162,4 +1162,41 @@ class DeliveryController extends Controller
       ob_end_clean();
       Storage::disk('local')->put($path, $content); 
     }
+
+    public function getAdminAutoRoute()
+    {
+      $job_list = Driver_jobs::where('completed', null)->orderBy('postal_code')->get();
+      $driver_list = User::where('user_type', 'driver')->get();
+
+      $average = 0;
+      if(count($driver_list) > 0)
+      {
+        $average = intval(round(count($job_list) / count($driver_list)));
+      }
+
+      if($average > 0)
+      {
+        $job_count = 0;
+        foreach($driver_list as $driver)
+        {
+          $driver_jobs = array();
+          $driver_id = array();
+          for($a = 0; $a < $average; $a++)
+          {
+            if($job_count >= count($job_list))
+            {
+              break;
+            }
+
+            array_push($driver_jobs, $job_list[$job_count]);
+            $job_count++;
+          }
+
+          $driver->job_list = $driver_jobs;
+          $driver->lat_lng = array();
+        }
+      }
+      
+      return view('delivery.autoroute', compact('job_list', 'driver_list'));
+    }
 }

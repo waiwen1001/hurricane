@@ -65,6 +65,7 @@ Route::group(['middleware' => ['auth:web'] ], function(){
     Route::get('/report', 'DeliveryController@getAdminReport')->name('getAdminReport');
     Route::get('/driver_earning_report', 'DeliveryController@getDriverEarningReport')->name('getDriverEarningReport');
     Route::get('/driver_earning_detail', 'DeliveryController@getDriverEarningDetail')->name('getDriverEarningDetail');
+    Route::get('/autoroute', 'DeliveryController@getAdminAutoRoute')->name('getAdminAutoRoute');
   });
 
   Route::prefix('order')->group(function () {
