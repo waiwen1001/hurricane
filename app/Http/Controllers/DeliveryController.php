@@ -1168,6 +1168,12 @@ class DeliveryController extends Controller
       $job_list = Driver_jobs::where('completed', null)->orderBy('postal_code')->get();
       $driver_list = User::where('user_type', 'driver')->get();
 
+      foreach($driver_list as $driver)
+      {
+        $driver->job_list = array();
+        $driver->lat_lng = array();
+      }
+
       $average = 0;
       if(count($driver_list) > 0)
       {
