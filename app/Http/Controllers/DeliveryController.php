@@ -1045,6 +1045,14 @@ class DeliveryController extends Controller
                 $est_to = $est_to_date." ".$est_to_time;
               }
 
+              if(strlen($postal_code) != 6)
+              {
+                for($a = strlen($postal_code); $a < 6; $a++)
+                {
+                  $postal_code = "0".$postal_code;
+                }
+              }
+
               Driver_jobs::create([
                 'name' => $name,
                 'email' => $email,
