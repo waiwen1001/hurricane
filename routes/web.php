@@ -98,6 +98,14 @@ Route::get('/storage_link', function () {
     Artisan::call('storage:link');
 });
 
+Route::get('/artisan_migrate', function () {
+    Artisan::call('migrate');
+});
+
+Route::get('/artisan_migrate_rollback', function () {
+    Artisan::call('migrate:rollback');
+});
+
 Route::get('/games', 'TestController@showGames')->name('games');
 Route::get('/final', 'TestController@showFinal')->name('final');
 Route::post('/startFinal', 'TestController@startFinal')->name('startFinal');
