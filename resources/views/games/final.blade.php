@@ -557,6 +557,7 @@
         clearInterval(start_clock);
 
         completed = 1;
+        final = result.final;
       }
     });
     

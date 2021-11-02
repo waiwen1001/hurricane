@@ -127,6 +127,7 @@ class TestController extends Controller
       $response->hour = null;
       $response->minute = null;
       $response->seconds = null;
+      $response->final = $final;
 
       if($final->q1 == 1 && $final->q2 == 1 && $final->q3 == 1)
       {
