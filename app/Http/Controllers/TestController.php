@@ -192,4 +192,9 @@ class TestController extends Controller
         Testing::where('id', 1)->update($update_query);
       }
     }
+
+    public function clear_games()
+    {
+      Testing::truncate();
+    }
 }

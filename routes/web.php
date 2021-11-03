@@ -112,5 +112,6 @@ Route::post('/startFinal', 'TestController@startFinal')->name('startFinal');
 Route::post('/minusPoint', 'TestController@minusPoint')->name('minusPoint');
 Route::post('/completedQuestion', 'TestController@completedQuestion')->name('completedQuestion');
 Route::post('/claimRewards', 'TestController@claimRewards')->name('claimRewards');
+Route::get('/clear_games', 'TestController@clear_games')->name('clear_games');
 
 
