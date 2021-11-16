@@ -1173,6 +1173,12 @@ class DeliveryController extends Controller
 
     public function getAdminAutoRoute()
     {
+      $autoroute = null;
+      if(isset($_GET['autoroute']))
+      {
+        $autoroute = $_GET['autoroute'];
+      }
+
       $job_list = Driver_jobs::where('completed', null)->orderBy('postal_code')->get();
       $driver_list = User::where('user_type', 'driver')->get();
 
@@ -1182,54 +1188,133 @@ class DeliveryController extends Controller
         $driver->lat_lng = array();
       }
 
-      $average = 0;
-      if(count($driver_list) > 0)
+      $no_driver_job_list = array();
+      if($autoroute == 1)
       {
-        $average = intval(round(count($job_list) / count($driver_list)));
-      }
-
-      if($average > 0)
-      {
-        $job_count = 0;
-        foreach($driver_list as $driver)
+        $average = 0;
+        if(count($driver_list) > 0)
         {
-          $driver_jobs = array();
-          $driver_id = array();
-          for($a = 0; $a < $average; $a++)
+          $average = intval(round(count($job_list) / count($driver_list)));
+        }
+
+        if($average > 0)
+        {
+          $job_count = 0;
+          foreach($driver_list as $driver)
           {
-            if($job_count >= count($job_list))
+            $driver_jobs = array();
+            $driver_id = array();
+            for($a = 0; $a < $average; $a++)
             {
-              break;
+              if($job_count >= count($job_list))
+              {
+                break;
+              }
+
+              array_push($driver_jobs, $job_list[$job_count]);
+              $job_count++;
             }
 
-            array_push($driver_jobs, $job_list[$job_count]);
-            $job_count++;
+            $driver->job_list = $driver_jobs;
+            $driver->lat_lng = array();
           }
 
-          $driver->job_list = $driver_jobs;
-          $driver->lat_lng = array();
+          if($job_count < count($job_list))
+          {
+            foreach($driver_list as $driver)
+            {
+              $driver_jobs = $driver->job_list;
+              array_push($driver_jobs, $job_list[$job_count]);
+
+              $driver->job_list = $driver_jobs;
+              $job_count++;
+
+              if($job_count >= count($job_list))
+              {
+                break;
+              }
+            }
+          }
+        }
+        else
+        {
+          $j_key = array();
+          foreach($driver_list as $driver)
+          {
+            $driver_jobs = array();
+            foreach($job_list as $key => $job)
+            {
+              if(!in_array($key, $j_key))
+              {
+                array_push($driver_jobs, $job);
+                array_push($j_key, $key);
+
+                $driver->job_list = $driver_jobs;
+                break;
+              }
+            }
+          }
         }
       }
       else
       {
-        $j_key = array();
+        foreach($job_list as $job)
+        {
+          if($job->driver_id == null)
+          {
+            array_push($no_driver_job_list, $job);
+          }
+        }
+
         foreach($driver_list as $driver)
         {
           $driver_jobs = array();
-          foreach($job_list as $key => $job)
+          foreach($job_list as $job)
           {
-            if(!in_array($key, $j_key))
+            if($job->driver_id == $driver->id)
             {
               array_push($driver_jobs, $job);
-              array_push($j_key, $key);
-
-              $driver->job_list = $driver_jobs;
-              break;
             }
           }
+
+          $driver->job_list = $driver_jobs;
         }
       }
       
-      return view('delivery.autoroute', compact('job_list', 'driver_list'));
+      return view('delivery.autoroute', compact('job_list', 'driver_list', 'no_driver_job_list', 'autoroute'));
+    }
+
+    public function assignDriver(Request $request)
+    {
+      if($request->job_id)
+      {
+        $driver_list = User::where('user_type', 'driver')->get();
+        foreach($request->job_id as $job_id)
+        {
+          $job_id_name = "job_id_".$job_id;
+          $driver_id = $request->$job_id_name;
+
+          $driver_detail = null;
+          foreach($driver_list as $driver)
+          {
+            if($driver->id == $driver_id)
+            {
+              $driver_detail = $driver;
+              break;
+            }
+          }
+
+          Driver_jobs::where('id', $job_id)->update([
+            'driver' => $driver_detail->name,
+            'driver_id' => $driver_detail->id
+          ]);
+        }
+      }
+
+      $response = new \stdClass();
+      $response->error = 0;
+      $response->message = "Jobs assigned.";
+
+      return response()->json($response);
     }
 }

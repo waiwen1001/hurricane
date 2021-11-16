@@ -27,20 +27,65 @@
 </style>
 
 <div class="autoroute">
-  @foreach($driver_list as $key => $driver)
-    <div class="driver_jobs" style="left: calc({{ $key }} * 270px);">
-      <label style="width: 100%; text-align: center; margin: 10px 0;">{{ $driver->name }}</label>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-8 col-sm-12">
+        <div style="overflow: auto; max-height: 470px; position: relative; width: 100%; height: 100%; padding-top: 5px;">
+          @foreach($driver_list as $key => $driver)
+            <div class="driver_jobs" style="left: calc({{ $key }} * 270px);">
+              <label style="width: 100%; text-align: center; margin: 10px 0;">{{ $driver->name }}</label>
 
-      <ul id="sortable_{{ $driver->id }}" class="connectedSortable" driver_id="{{ $driver->id }}">
-        @foreach($driver->job_list as $job)
-          <li class="ui-state-default" id="job_{{ $job->id }}" lat_lng="" job_id="{{ $job->id }}">
-            {{ $job->name }}<br>
-            <p style="font-size: 13px; margin-bottom: 0px;">{{ $job->address }}</p>
-          </li>
-        @endforeach
-      </ul>
+              <ul id="sortable_{{ $driver->id }}" class="connectedSortable" driver_id="{{ $driver->id }}">
+                @foreach($driver->job_list as $job)
+                  <li class="ui-state-default" id="job_{{ $job->id }}" lat_lng="" job_id="{{ $job->id }}">
+                    {{ $job->name }}<br>
+                    <p style="font-size: 13px; margin-bottom: 0px;">{{ $job->address }}</p>
+                  </li>
+                @endforeach
+              </ul>
+            </div>
+          @endforeach
+        </div>
+        <div style="margin-top: 6px;">
+          <button class="btn btn-success" id="assign_driver">Assign</button>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-12">
+        <div id="autoroute_joblist_box" style="border: 20px solid #ccc; border-bottom-width: 50px; border-radius: 3px; display: inline-block;  width: 100%; overflow-y: auto; position: relative;">
+          <div style="height: 450px;">
+            <div style="height: 100%;">
+              <ul class="connectedSortable" style="width: 100%; height: 100%; display: inline-block; overflow-y: auto;">
+                @foreach($no_driver_job_list as $job)
+                  <li class="ui-state-default" id="job_{{ $job->id }}" lat_lng="" job_id="{{ $job->id }}">
+                    {{ $job->name }}<br>
+                    <p style="font-size: 13px; margin-bottom: 0px;">{{ $job->address }}</p>
+                  </li>
+                @endforeach
+              </ul>
+            </div>
+          </div>
+          <div class="autoroute_joblist">
+            <p>List of jobs found here</p>
+            <div style="width: calc(100% - 50px); height: 1px; background: #ccc; margin-bottom: 1em;"></div>
+            <p style="text-align: center;">Can drag jobs into this box to reschedule for next day.</p>
+          </div>
+        </div>
+
+        <div class="autoroute_joblist_btn">
+          <form method="POST" action="{{ route('importNewJobs') }}" enctype="multipart/form-data" id="import_file_form">
+            @csrf
+            <input type="file" style="display: none;" name="file" id="import_file_input" accept=".xlsx, .xlsm, .csv, .xls" required />
+          </form>
+          <button class="btn btn-success" id="import_file">Import List</button>
+          @if($autoroute == null)
+            <button class="btn btn-success" id="auto_route_btn">Auto Route</button>
+          @else
+            <button class="btn btn-success" id="revert_route_btn">Revert Route</button>
+          @endif
+        </div>
+      </div>
     </div>
-  @endforeach
+  </div>
 </div>
 
 <div class="container">
@@ -68,6 +113,7 @@
     $( ".connectedSortable" ).sortable({
       connectWith: ".connectedSortable",
       update: function( event, ui ) {
+        $(".connectedSortable").removeClass("hovering");
         var driver_id = $(this).attr("driver_id");
         for(var a = 0; a < driver_list.length; a++)
         {
@@ -128,6 +174,10 @@
           polylines[c].setMap(null);
         }
         generate_direction();
+      },
+      over: function(){
+        $(".connectedSortable").removeClass("hovering");
+        $(this).addClass('hovering');
       }
     }).disableSelection();
 
@@ -138,6 +188,30 @@
         initMap();
       }
     }, 1000);
+
+    $("#import_file").click(function(){
+      $("#import_file_input").click();
+    });
+
+    $("#import_file_input").change(function(){
+      if($("#import_file_input").val())
+      {
+        $("#import_file_form").submit();
+      }
+    });
+
+    $("#assign_driver").click(function(){
+      assignDriver();
+    });
+
+    $("#auto_route_btn").click(function(){
+      window.location.href = "{{ route('getAdminAutoRoute', ['autoroute' => 1]) }}";
+    });
+
+    $("#revert_route_btn").click(function(){
+      window.location.href = "{{ route('getAdminAutoRoute') }}";
+    });
+
   });
 
   function initMap()
@@ -326,6 +400,25 @@
 
       clearInterval(check_route_interval);
     }
+  }
+
+  function assignDriver()
+  {
+    var form_data = "_token={{ csrf_token() }}";
+    $(".driver_jobs").each(function(){
+      var driver_id = $(this).children(".connectedSortable").attr("driver_id");
+      $(this).children(".connectedSortable").children("li").each(function(){
+        var job_id = $(this).attr("job_id");
+        form_data += "&job_id[]="+job_id+"&job_id_"+job_id+"="+driver_id;
+      });
+    });
+
+    $.post("{{ route('assignDriver') }}", form_data, function(result){
+      if(result.error == 0)
+      {
+        window.location.href = "{{ route('getAdminAutoRoute') }}";
+      }
+    });
   }
 
 </script>
