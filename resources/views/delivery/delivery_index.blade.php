@@ -298,6 +298,7 @@
       {
         geocoder.geocode( { 'address': postal_code }, function(results, status) {
           if (status == google.maps.GeocoderStatus.OK) {
+            console.log("Success"+postal_code);
             if (status != google.maps.GeocoderStatus.ZERO_RESULTS) {
               // map.setCenter(results[0].geometry.location);
 
@@ -347,7 +348,8 @@
               showError("No results found", 0);
             }
           } else {
-            showError("Geocode was not successful for the following reason: " + status, 0);
+            console.log("Geocode was not successful for the following reason: " + status + " postal code "+postal_code+" not found");
+            showError("Postal code : "+postal_code+" not found.", 0);
           }
         });
       }

@@ -1288,6 +1288,11 @@ class DeliveryController extends Controller
     {
       if($request->job_id)
       {
+        Driver_jobs::where('completed', null)->update([
+          'driver' => null,
+          'driver_id' => null
+        ]);
+        
         $driver_list = User::where('user_type', 'driver')->get();
         foreach($request->job_id as $job_id)
         {
