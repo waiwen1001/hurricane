@@ -37,9 +37,13 @@
 
               <ul id="sortable_{{ $driver->id }}" class="connectedSortable" driver_id="{{ $driver->id }}">
                 @foreach($driver->job_list as $job)
-                  <li class="ui-state-default" id="job_{{ $job->id }}" lat_lng="" job_id="{{ $job->id }}">
+                  <li class="ui-state-default" id="job_{{ $job->id }}" lat_lng="" job_id="{{ $job->id }}" style="position: relative;">
                     {{ $job->name }}<br>
+                    <p style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">{{ $job->pick_up }}</p>
                     <p style="font-size: 13px; margin-bottom: 0px;">{{ $job->address }}</p>
+                    <div class="delete_job" job_id="{{ $job->id }}">
+                      <i class="fa fa-times"></i>
+                    </div>
                   </li>
                 @endforeach
               </ul>
@@ -56,9 +60,13 @@
             <div style="height: 100%;">
               <ul class="connectedSortable" style="width: 100%; height: 100%; display: inline-block; overflow-y: auto;">
                 @foreach($no_driver_job_list as $job)
-                  <li class="ui-state-default" id="job_{{ $job->id }}" lat_lng="" job_id="{{ $job->id }}">
+                  <li class="ui-state-default" id="job_{{ $job->id }}" lat_lng="" job_id="{{ $job->id }}" style="position: relative;">
                     {{ $job->name }}<br>
+                    <p style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">{{ $job->pick_up }}</p>
                     <p style="font-size: 13px; margin-bottom: 0px;">{{ $job->address }}</p>
+                    <div class="delete_job" job_id="{{ $job->id }}">
+                      <i class="fa fa-times"></i>
+                    </div>
                   </li>
                 @endforeach
               </ul>
@@ -212,6 +220,23 @@
       window.location.href = "{{ route('getAdminAutoRoute') }}";
     });
 
+    $(".delete_job").click(function(){
+      var _this = $(this);
+      var r = confirm("Are you sure you want to delete this job?");
+      if (r == true) {
+        $.post("{{ route('deleteJob') }}", { "_token" : "{{ csrf_token() }}", "job_id" : $(this).attr("job_id") }, function(result){
+          if(result.error == 0)
+          {
+            _this.parent("li").remove();
+            showCompleted(result.message, 0);
+          }
+          else
+          {
+            showError("Delete job failed, please try again.", 0);
+          }
+        });
+      }
+    });
   });
 
   function initMap()

@@ -1322,4 +1322,14 @@ class DeliveryController extends Controller
 
       return response()->json($response);
     }
+
+    public function deleteJob(Request $request)
+    {
+      driver_jobs::where('id', $request->job_id)->delete();
+      $response = new \stdClass();
+      $response->error = 0;
+      $response->message = "Jobs deleted.";
+
+      return response()->json($response);
+    }
 }

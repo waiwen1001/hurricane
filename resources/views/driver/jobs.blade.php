@@ -6,55 +6,72 @@
 
 <div style="padding: 10px 20px 30px 20px;">
   <div class="row">
-    <div class="col-sm-12 col-lg-8" style="margin-bottom: 20px;">
-      <div class="jobs_box">
-        <table id="jobs_table" class="table table-bordered table-striped" cellspacing="0" width="100%">
-          <thead>
-            <th></th>
-            <th>Name</th>
-            <th>Contact Number</th>
-            <th>Address</th>
-            <th>Expected Delivery Date Time</th>
-            <th>Wallet Value</th>
-            <th style="min-width: 100px;">Action</th>
-          </thead>
-          <tbody>
-            @foreach($driver_jobs as $job)
-              <tr>
-                <td data-order="{{ $job->status == 'starting' ? '0' : '1' }}">
-                  <div class="status_icon" style="background: {{ $job->color }}"></div>
-                </td>
-                <td>{{ $job->name }}</td>
-                <td>{{ $job->contact_number }}</td>
-                <td>{{ $job->address }}</td>
-                <td>
-                  @if($job->est_delivery_from && $job->est_delivery_from)
-                    {{ $job->est_delivery_from_text }} - {{ $job->est_delivery_to_text }}
-                  @endif
-                </td>
-                <td>S$ {{ number_format($job->price, 2) }}</td>
-                <td>
-                  @if(!$have_job)
-                    <button class="btn btn-primary select" onclick="selectJob(this)" job_id="{{ $job->id }}">Select</button>
-                    <button class="btn btn-danger cancel" onclick="cancelJob(this)" job_id="{{ $job->id }}">Cancel</button>
-                  @else
-                    @if($job->status == "starting")
-                      <button class="btn btn-success complete" job_id="{{ $job->id }}" onclick="completeJob(this)">Complete</button>
-                      <button class="btn btn-secondary direction" direction="{{ $job->postal_code }}" onclick="jobDirection(this)">Direction</button>
-                    @else
-                      <button class="btn btn-primary select" job_id="{{ $job->id }}" disabled onclick="selectJob(this)">Select</button>
-                    @endif
+    @foreach($pick_up_list as $pick_up)
+      @if(count($pick_up->job_list) > 0)
+        <div class="col-sm-12 col-lg-6" style="margin-bottom: 20px;">
+          <div class="jobs_box">
+            <div style="display: inline-block; width: 100%; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+              <label style="margin: 0px; line-height: 38px; font-weight: bold;">Pick up location : {{ $pick_up->name }}</label>
+              @if($pick_up->disabled == 1)
+                <button type="button" class="btn btn-primary arrive_proof" style="float: right;" pick_up_id="{{ $pick_up->id }}" pick_up_name="{{ $pick_up->name }}">Arrive proof</button>
+              @endif
+            </div>
+            <div>
+              <table class="jobs_table table table-bordered table-striped" pick_up_id="{{ $pick_up->id }}" cellspacing="0" width="100%">
+                <thead>
+                  <th></th>
+                  <th>Name</th>
+                  <th>Contact Number</th>
+                  <th>Address</th>
+                  <th>Expected Delivery Date Time</th>
+                  <th>Wallet Value</th>
+                  <th style="min-width: 100px;">Action</th>
+                </thead>
+                <tbody>
+                  @foreach($pick_up->job_list as $job)
+                    <tr>
+                      <td data-order="{{ $job->status == 'starting' ? '0' : '1' }}">
+                        <div class="status_icon" style="background: {{ $job->color }}"></div>
+                      </td>
+                      <td>{{ $job->name }}</td>
+                      <td>{{ $job->contact_number }}</td>
+                      <td>{{ $job->address }}</td>
+                      <td>
+                        @if($job->est_delivery_from && $job->est_delivery_from)
+                          {{ $job->est_delivery_from_text }} - {{ $job->est_delivery_to_text }}
+                        @endif
+                      </td>
+                      <td>S$ {{ number_format($job->price, 2) }}</td>
+                      <td>
+                        @if($pick_up->disabled == 0)
+                          @if(!$have_job)
+                            <button class="btn btn-primary select" onclick="selectJob(this)" job_id="{{ $job->id }}">Select</button>
+                            <button class="btn btn-danger cancel" onclick="cancelJob(this)" job_id="{{ $job->id }}">Cancel</button>
+                          @else
+                            @if($job->status == "starting")
+                              <button class="btn btn-success complete" job_id="{{ $job->id }}" onclick="completeJob(this)">Complete</button>
+                              <button class="btn btn-secondary direction" direction="{{ $job->postal_code }}" onclick="jobDirection(this)">Direction</button>
+                            @else
+                              <button class="btn btn-primary select" job_id="{{ $job->id }}" disabled onclick="selectJob(this)">Select</button>
+                            @endif
 
-                    <button class="btn btn-danger cancel" job_id="{{ $job->id }}" onclick="cancelJob(this)" style="display: {{ $job->status == 'starting' ? 'none' : '' }};" {{ $job->status == 'starting' ? 'disabled' : '' }}>Cancel</button>
-                  @endif
-                </td>
-              </tr>
-            @endforeach
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div class="col-sm-12 col-lg-4" style="margin-bottom: 20px;">
+                            <button class="btn btn-danger cancel" job_id="{{ $job->id }}" onclick="cancelJob(this)" style="display: {{ $job->status == 'starting' ? 'none' : '' }};" {{ $job->status == 'starting' ? 'disabled' : '' }}>Cancel</button>
+                          @endif
+                        @else
+                          <span style="color: red;">Please upload arrive proof before you proceed.</span>
+                        @endif
+                      </td>
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      @endif
+    @endforeach
+    
+    <div class="col-12" style="margin-bottom: 20px;">
       <div class="row" id="driver_status_list">
         @foreach($driver_status_list as $status)
           <div class="col-sm-12 col-md-6">
@@ -105,7 +122,7 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="completeModalLabel">Delivered</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="vcpClose_2">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
@@ -160,6 +177,56 @@
       </div>
     </div>
   </div>
+
+  <div class="modal fade" id="arriveProofModal" role="dialog" aria-labelledby="arriveProofModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document" style="width: 1200px; max-width: 95%;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="arriveProofModalLabel">Arrive Proof</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body" style="max-height: 500px; overflow-x: hidden; overflow-y: auto;">
+          <form method="POST" action="{{ route('submitPickUp') }}">
+            @csrf
+            <div class="row">
+              <div class="col-sm-12">
+                <div style="border-bottom: 1px solid #ccc; margin-bottom: 10px; padding-bottom: 10px;">
+                  Submit arrive proof to pick up point : <label style="font-weight: bold; margin-bottom: 0px;" id="pick_up_name"></label>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-group">
+                  <label style="width: 100%;">Unit number</label>
+                  <input type="file" name="file_unit_number[]" accept="image/*" required multiple />
+                </div>
+              </div>
+
+              <div class="col-sm-6">
+                <div class="form-group">
+                  <label style="width: 100%;">Items</label>
+                  <input type="file" name="file_items[]" accept="image/*" required multiple />
+                </div>
+              </div>
+
+              <div class="col-sm-6" style="clear: both;">
+                <div class="form-group">
+                  <label style="width: 100%;">Signatory</label>
+                  <input type="file" name="file_signatory[]" accept="image/*" required multiple />
+                </div>
+              </div>
+
+              <div class="col-sm-12">
+                <input type="hidden" name="pick_up" id="pick_up_id" />
+                <button type="submit" class="btn btn-success">Submit</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="signature_box">
@@ -185,7 +252,7 @@
 <script>
   
   let geocoder;
-  let jobs_table;
+  let jobs_table = [];
   var driver_jobs = @json($driver_jobs);
   var marker_count = 0;
   var markers = [];
@@ -200,11 +267,16 @@
     check_online();
     setInterval(check_online, 60000);
 
-    jobs_table = $("#jobs_table").DataTable({
+    $(".jobs_table").each(function(){
+      var pick_up_id = $(this).attr("pick_up_id");
+      jobs_table['pick_up_'+pick_up_id] = $(".jobs_table[pick_up_id="+pick_up_id+"]").DataTable({
       responsive: true,
-      scrollY: '450px',
-      scrollCollapse: true,
+        scrollY: '450px',
+        scrollCollapse: true,
+      });
     });
+
+    console.log(jobs_table);
 
     $("#clear_signature").click(function(){
       signaturePad.clear();
@@ -270,6 +342,12 @@
         initMap();
       }
     }, 1000);
+
+    $(".arrive_proof").click(function(){
+      $("#pick_up_id").val($(this).attr("pick_up_id"));
+      $("#pick_up_name").html($(this).attr("pick_up_name"));
+      $("#arriveProofModal").modal('show');
+    });
   });
 
   initialize();

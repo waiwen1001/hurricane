@@ -73,3 +73,36 @@ function showError(message, refresh)
     });
   }
 }
+
+function showCompleted(message, refresh)
+{
+  if(refresh == 0)
+  {
+    Swal.fire({
+      icon: 'success',
+      title: message,
+      showCancelButton: false,
+      showConfirmButton: true,
+      allowOutsideClick: false,
+      allowEscapeKey : false,
+      confirmButtonText: "Done"
+    });
+  }
+  else
+  {
+    Swal.fire({
+      icon: 'success',
+      title: message,
+      showCancelButton: false,
+      showConfirmButton: true,
+      allowOutsideClick: false,
+      allowEscapeKey : false,
+      confirmButtonText: "Refresh"
+    }).then((result) => {
+      /* Read more about isConfirmed, isDenied below */
+      if (result.isConfirmed) {
+        location.reload();
+      }
+    });
+  }
+}

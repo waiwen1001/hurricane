@@ -48,14 +48,15 @@ class DriverController extends Controller
     public function getDriverJobs()
     {
       $driver_jobs_info = $this->driverJobsList();
-      $driver_status_list = $driver_jobs_info->driver_status_list;
 
+      $driver_status_list = $driver_jobs_info->driver_status_list;
       $driver_jobs = $driver_jobs_info->driver_jobs;
+      $pick_up_list = $driver_jobs_info->pick_up_list;
       $have_job = $driver_jobs_info->have_job;
       $total_urgent_hours_two = $driver_jobs_info->total_urgent_hours_two;
       $total_urgent_hours_four = $driver_jobs_info->total_urgent_hours_four;
 
-      return view('driver.jobs', compact('driver_jobs', 'have_job', 'driver_status_list', 'total_urgent_hours_two', 'total_urgent_hours_four'));
+      return view('driver.jobs', compact('driver_jobs', 'pick_up_list', 'have_job', 'driver_status_list', 'total_urgent_hours_two', 'total_urgent_hours_four'));
     }
 
     public function submitPickUp(Request $request)
@@ -110,7 +111,13 @@ class DriverController extends Controller
         'pick_up' => $pick_up->name,
       ]);
 
-      return redirect(route('getDriverSelectJobs'));
+      Driver_jobs::where('driver_id', $user->id)->whereNull('status')->where('pick_up_id', $pick_up->id)->whereNull('completed')->update([
+        'status' => "accepted",
+        'status_updated_at' => date('Y-m-d H:i:s')
+      ]);
+
+      // return redirect(route('getDriverSelectJobs'));
+      return redirect(route('driverJobsList'));
     }
 
     public function driverAcceptJobs(Request $request)
@@ -277,6 +284,21 @@ class DriverController extends Controller
       {
         $driver_jobs = Driver_jobs::whereBetween('created_at', [($date_from." 00:00:00"), ($date_to." 23:59:59")])->get();
       }
+
+      $pick_up_location = array();
+      foreach($driver_jobs as $job)
+      {
+        if(!in_array($job->pick_up_id, $pick_up_location))
+        {
+          array_push($pick_up_location, $job->pick_up_id);
+        }
+      }
+
+      $pick_up_list = pick_up::whereIn('id', $pick_up_location)->get();
+      foreach($pick_up_list as $pick_up)
+      {
+        $pick_up->job_list = array();
+      }
       
       $driver_status_list = $this->driverStatus();
 
@@ -333,12 +355,38 @@ class DriverController extends Controller
             $total_urgent_hours_four++;
           }
         }
+
+        foreach($pick_up_list as $key => $pick_up)
+        {
+          if($job->pick_up_id == $pick_up->id)
+          {
+            $pick_up_job_list = $pick_up->job_list;
+            array_push($pick_up_job_list, $job);
+
+            $pick_up->job_list = $pick_up_job_list;
+            break;
+          }
+        }
+      }
+
+      foreach($pick_up_list as $pick_up)
+      {
+        $pick_up->disabled = 0;
+        foreach($pick_up->job_list as $job)
+        {
+          if($job->status == "New job")
+          {
+            $pick_up->disabled = 1;
+            break;
+          }
+        }
       }
 
       if($driver == 1)
       {
         $driver_jobs_info = new \stdClass();
         $driver_jobs_info->driver_jobs = $driver_jobs;
+        $driver_jobs_info->pick_up_list = $pick_up_list;
         $driver_jobs_info->have_job = $have_job;
         $driver_jobs_info->total_urgent_hours_two = $total_urgent_hours_two;
         $driver_jobs_info->total_urgent_hours_four = $total_urgent_hours_four;
@@ -350,7 +398,6 @@ class DriverController extends Controller
       {
         return $driver_jobs;
       }
-      
     }
 
     public function driverStatus()

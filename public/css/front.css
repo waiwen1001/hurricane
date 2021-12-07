@@ -119,6 +119,7 @@ tr.ember { background-color: rgb(255 87 34 / 10%) !important; }
 .autoroute_joblist { visibility: hidden; height: 100%; display: flex; align-items: center; width: 100%; flex-direction: column; justify-content: center; position: absolute; top: 0px; z-index: -1; }
 #autoroute_joblist_box:hover .autoroute_joblist { visibility: initial; }
 .autoroute_joblist_btn { position: absolute; bottom: 13px; left: 35px; }
+.delete_job { position: absolute; right: -5px; top: -5px; background: #e91e63; color: #fff; border-radius: 50%; width: 20px; height: 20px; text-align: center; font-size: 12px; line-height: 20px; cursor: pointer; }
 
 
 

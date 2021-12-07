@@ -24,6 +24,14 @@
             </div>
 
             <div class="menu_footer">
+              <div style="background: #4caf50; color: #fff; padding: 0 10px;">
+                <i class="fas fa-user"></i>
+                <label style="float: right; margin: 0px;">
+                  @if(Auth::check())
+                    {{ Auth::user()->name }}
+                  @endif
+                </label>
+              </div>
               <div class="user_wallet">
                 <i class="fas fa-wallet"></i>
                 <label>S$ {{ number_format($user->wallet, 2) }}</label>
