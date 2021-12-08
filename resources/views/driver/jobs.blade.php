@@ -43,7 +43,9 @@
                       </td>
                       <td>S$ {{ number_format($job->price, 2) }}</td>
                       <td>
-                        @if($pick_up->disabled == 0)
+                        @if($job->status == "new job")
+                          <span style="color: red;">Please upload arrive proof before you proceed.</span>
+                        @else
                           @if(!$have_job)
                             <button class="btn btn-primary select" onclick="selectJob(this)" job_id="{{ $job->id }}">Select</button>
                             <button class="btn btn-danger cancel" onclick="cancelJob(this)" job_id="{{ $job->id }}">Cancel</button>
@@ -57,8 +59,6 @@
 
                             <button class="btn btn-danger cancel" job_id="{{ $job->id }}" onclick="cancelJob(this)" style="display: {{ $job->status == 'starting' ? 'none' : '' }};" {{ $job->status == 'starting' ? 'disabled' : '' }}>Cancel</button>
                           @endif
-                        @else
-                          <span style="color: red;">Please upload arrive proof before you proceed.</span>
                         @endif
                       </td>
                     </tr>
@@ -254,6 +254,7 @@
   let geocoder;
   let jobs_table = [];
   var driver_jobs = @json($driver_jobs);
+  var pick_up_list = @json($pick_up_list);
   var marker_count = 0;
   var markers = [];
   var marker_array = [];
@@ -275,8 +276,6 @@
         scrollCollapse: true,
       });
     });
-
-    console.log(jobs_table);
 
     $("#clear_signature").click(function(){
       signaturePad.clear();
@@ -568,71 +567,82 @@
 
   function generateJobsTable()
   {
-    jobs_table.clear();
-    for(var a = 0; a < driver_jobs.length; a++)
+    for(var b = 0; b < pick_up_list.length; b++)
     {
-      let job = driver_jobs[a];
-      var html = "";
-      html += '<tr>';
-
-      let starting = 1;
-      if(job.status == "starting")
-        starting = 0;
-
-      if(!job.name)
-        job.name = "";
-
-      if(!job.contact_number)
-        job.contact_number = "";
-
-      html += '<td data-order="'+starting+'">';
-      html += '<div class="status_icon" style="background: '+job.color+'"></div>';
-      html += '</td>';
-      html += '<td>'+job.name+'</td>';
-      html += '<td>'+job.contact_number+'</td>';
-      html += '<td>'+job.address+'</td>';
-      html += '<td>';
-      if(job.est_delivery_from && job.est_delivery_to)
+      var job_table = jobs_table["pick_up_"+pick_up_list[b].id].clear();
+      for(var a = 0; a < pick_up_list[b].job_list.length; a++)
       {
-        html += job.est_delivery_from_text+' - '+job.est_delivery_to_text;
-      }
+        let job = pick_up_list[b].job_list[a];
+        var html = "";
+        html += '<tr>';
 
-      html += '</td>';
-      html += '<td>S$ '+job.price_text+'</td>';
-
-      html += "<td>";
-      if(!have_job)
-      {
-        html += '<button class="btn btn-primary select" job_id="'+job.id+'" onclick="selectJob(this)">Select</button>';
-        html += '<button class="btn btn-danger cancel" job_id="'+job.id+'" onclick="cancelJob(this)">Cancel</button>';
-      }
-      else
-      {
+        let starting = 1;
         if(job.status == "starting")
+          starting = 0;
+
+        if(!job.name)
+          job.name = "";
+
+        if(!job.contact_number)
+          job.contact_number = "";
+
+        html += '<td data-order="'+starting+'">';
+        html += '<div class="status_icon" style="background: '+job.color+'"></div>';
+        html += '</td>';
+        html += '<td>'+job.name+'</td>';
+        html += '<td>'+job.contact_number+'</td>';
+        html += '<td>'+job.address+'</td>';
+        html += '<td>';
+        if(job.est_delivery_from && job.est_delivery_to)
         {
-          html += '<button class="btn btn-success complete" job_id="'+job.id+'" onclick="completeJob(this)">Complete</button>';
-          html += '<button class="btn btn-secondary direction" location="'+job.postal_code+'" onclick="jobDirection(this)">Direction</button>';
+          html += job.est_delivery_from_text+' - '+job.est_delivery_to_text;
+        }
+
+        html += '</td>';
+        html += '<td>S$ '+job.price_text+'</td>';
+
+        html += "<td>";
+        if(job.status == "new job")
+        {
+          html += "<span style='color: red;'>Please upload arrive proof before you proceed.</span>";
         }
         else
         {
-          html += '<button class="btn btn-primary select" job_id="'+job.id+'" disabled onclick="selectJob(this)">Select</button>';
+          if(!have_job)
+          {
+            html += '<button class="btn btn-primary select" job_id="'+job.id+'" onclick="selectJob(this)">Select</button>';
+            html += '<button class="btn btn-danger cancel" job_id="'+job.id+'" onclick="cancelJob(this)">Cancel</button>';
+          }
+          else
+          {
+            if(job.status == "starting")
+            {
+              html += '<button class="btn btn-success complete" job_id="'+job.id+'" onclick="completeJob(this)">Complete</button>';
+              html += '<button class="btn btn-secondary direction" direction="'+job.postal_code+'" onclick="jobDirection(this)">Direction</button>';
+            }
+            else
+            {
+              html += '<button class="btn btn-primary select" job_id="'+job.id+'" disabled onclick="selectJob(this)">Select</button>';
+            }
+            let display = "";
+            let disabled = "";
+            if(job.status == "starting")
+            {
+              display = "none";
+              disabled = "disabled";
+            }
+            html += '<button class="btn btn-danger cancel" job_id="'+job.id+'" style="display: '+display+';" '+disabled+' onclick="cancelJob(this)">Cancel</button>';
+          }
         }
-        let display = "";
-        let disabled = "";
-        if(job.status == "starting")
-        {
-          display = "none";
-          disabled = "disabled";
-        }
-        html += '<button class="btn btn-danger cancel" job_id="'+job.id+'" style="display: '+display+';" '+disabled+' onclick="cancelJob(this)">Cancel</button>';
+        
+        html += '</td>';
+        html += '</tr>';
+
+        job_table.row.add($(html)).node();
       }
-      html += '</td>';
-      html += '</tr>';
 
-      jobs_table.row.add($(html)).node();
+      job_table.draw();
     }
-
-    jobs_table.draw();
   }
 
   function generateStatusAlert(driver_status_list, urgent_2, urgent_4)
@@ -689,6 +699,7 @@
         var driver_jobs_info = result.driver_jobs_info;
         driver_jobs = driver_jobs_info.driver_jobs;
         have_job = driver_jobs_info.have_job;
+        pick_up_list = driver_jobs_info.pick_up_list;
 
         generateJobsTable();
         generateStatusAlert(driver_jobs_info.driver_status_list, driver_jobs_info.total_urgent_hours_two, driver_jobs_info.total_urgent_hours_four);
@@ -725,6 +736,7 @@
         var driver_jobs_info = result.driver_jobs_info;
         driver_jobs = driver_jobs_info.driver_jobs;
         have_job = driver_jobs_info.have_job;
+        pick_up_list = driver_jobs_info.pick_up_list;
 
         generateJobsTable();
         generateStatusAlert(driver_jobs_info.driver_status_list, driver_jobs_info.total_urgent_hours_two, driver_jobs_info.total_urgent_hours_four);
@@ -743,6 +755,7 @@
 
   function jobDirection(_this)
   {
+    console.log(_this);
     window.open("https://www.google.com/maps/dir/"+my_pos.lat+" "+my_pos.lng+"/"+$(_this).attr('direction'))+"/am=t/";
   }
 

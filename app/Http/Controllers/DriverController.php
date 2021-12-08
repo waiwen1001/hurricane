@@ -117,7 +117,7 @@ class DriverController extends Controller
       ]);
 
       // return redirect(route('getDriverSelectJobs'));
-      return redirect(route('driverJobsList'));
+      return redirect(route('getDriverJobs'));
     }
 
     public function driverAcceptJobs(Request $request)
@@ -311,7 +311,7 @@ class DriverController extends Controller
         $job->color = "#fff";
         if(!$job->status)
         {
-          $job->status = "New job";
+          $job->status = "new job";
         }
         $job->est_delivery_from_text = "";
         $job->est_delivery_to_text = "";
@@ -374,7 +374,7 @@ class DriverController extends Controller
         $pick_up->disabled = 0;
         foreach($pick_up->job_list as $job)
         {
-          if($job->status == "New job")
+          if($job->status == "new job")
           {
             $pick_up->disabled = 1;
             break;
@@ -403,6 +403,12 @@ class DriverController extends Controller
     public function driverStatus()
     {
       $status = [
+        [
+          'status' => "new job",
+          'color' => "#fff",
+          'have_job' => null,
+          'count' => 0
+        ],
         [
           'status' => "accepted",
           'color' => "#ccc",
