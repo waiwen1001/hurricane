@@ -13,6 +13,8 @@ use App\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class DriverController extends Controller
 {
@@ -181,7 +183,17 @@ class DriverController extends Controller
       $user = Auth::user();
       $now = date("Y-m-d H:i:s");
 
-      if($request->file_pod && $request->job_id && $request->signature)
+      $proceed = false;
+      if($user->user_type == "driver" && $user->driver_type == "contractor" && $request->file_pod && $request->job_id)
+      {
+        $proceed = true;
+      }
+      elseif($request->file_pod && $request->job_id && $request->signature)
+      {
+        $proceed = true;
+      }
+
+      if($proceed == true)
       {
         $driver_job = Driver_jobs::where('id', $request->job_id)->first();
         foreach($request->file_pod as $file)
@@ -203,31 +215,35 @@ class DriverController extends Controller
           ]);
         }
 
-        $signature_img = $request->signature;
-        $signature_img = str_replace('data:image/png;base64,', '', $signature_img);
-        $signature_img = str_replace(' ', '+', $signature_img);
-        $signature_file = base64_decode($signature_img);
+        if($request->signature)
+        {
+          $signature_img = $request->signature;
+          $signature_img = str_replace('data:image/png;base64,', '', $signature_img);
+          $signature_img = str_replace(' ', '+', $signature_img);
+          $signature_file = base64_decode($signature_img);
 
-        $signature_filename = $this->quickRandom(16).'.'.'png';
-        $signature_path = "driver/completed/".$driver_job->id."/".$signature_filename;
-        Storage::put($signature_path, $signature_file);
+          $signature_filename = $this->quickRandom(16).'.'.'png';
+          $signature_path = "driver/completed/".$driver_job->id."/".$signature_filename;
+          Storage::put($signature_path, $signature_file);
 
-        $signature_filesize = Storage::size($signature_path);
+          $signature_filesize = Storage::size($signature_path);
 
-        Attachment::create([
-          'user_id' => $user->id,
-          'user_name' => $user->name,
-          'status' => "completed",
-          'job_id' => $driver_job->id,
-          'attachment_type' => "signature",
-          'file_name' => $signature_filename,
-          'file_path' => $signature_path,
-          'file_size' => $signature_filesize
-        ]);
+          Attachment::create([
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'status' => "completed",
+            'job_id' => $driver_job->id,
+            'attachment_type' => "signature",
+            'file_name' => $signature_filename,
+            'file_path' => $signature_path,
+            'file_size' => $signature_filesize
+          ]);
+        }
 
         Driver_jobs::where('id', $request->job_id)->update([
           'status' => "completed",
           'status_updated_at' => $now,
+          'completed_at' => $now,
           'completed' => 1
         ]);
 
@@ -271,18 +287,37 @@ class DriverController extends Controller
       return response()->json($response);
     }
 
-    public function driverJobsList($driver = 1, $admin = 0, $date_from = null, $date_to = null)
+    public function driverJobsList($driver = 1, $admin = 0, $date_from = null, $date_to = null, $driver_id = null, $status = null)
     {
       $user = Auth::user();
       $now = date("Y-m-d H:i:s");
 
       if($driver == 1)
       {
-        $driver_jobs = Driver_jobs::where('completed', null)->where('driver_id', $user->id)->get();
+        $driver_jobs = Driver_jobs::where(function($query) use ($now){
+          $query->where('completed', null)->orWhereDate('completed_at', date('Y-m-d', strtotime($now)));
+        })->where('driver_id', $user->id)->get();
       }
       elseif($admin == 1)
       {
-        $driver_jobs = Driver_jobs::whereBetween('created_at', [($date_from." 00:00:00"), ($date_to." 23:59:59")])->get();
+        $driver_jobs = Driver_jobs::whereBetween('created_at', [($date_from." 00:00:00"), ($date_to." 23:59:59")])->where(function($query) use ($driver_id, $status){
+          if($driver_id != "0")
+          {
+            $query->where('driver_id', $driver_id);
+          }
+
+          if($status != "0")
+          {
+            if($status == "new job")
+            {
+              $query->where('status', null);
+            }
+            else
+            {
+              $query->where('status', $status);
+            }
+          }
+        })->get();
       }
 
       $pick_up_location = array();
@@ -367,6 +402,12 @@ class DriverController extends Controller
             break;
           }
         }
+
+        $job->assigned_at_text = "";
+        if($job->assigned_at)
+        {
+          $job->assigned_at_text = date("d M Y h:i A", strtotime($job->assigned_at));
+        }
       }
 
       foreach($pick_up_list as $pick_up)
@@ -434,8 +475,78 @@ class DriverController extends Controller
 
     public static function quickRandom($length = 16)
     {
-        $pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      $pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-        return substr(str_shuffle(str_repeat($pool, 5)), 0, $length);
+      return substr(str_shuffle(str_repeat($pool, 5)), 0, $length);
+    }
+
+    public function downloadDriverJobs()
+    {
+      $user = Auth::user();
+      $now = date('Y-m-d H:i:s');
+
+      $driver_jobs = Driver_jobs::where(function($query) use ($now){
+        $query->where('completed', null)->orWhereDate('completed_at', date('Y-m-d', strtotime($now)));
+      })->where('driver_id', $user->id)->get();
+
+      $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+      $sheet = $spreadsheet->getActiveSheet();
+      $sheet->setTitle('Driver job list');
+
+      $sheet->setCellValue('A1', 'Document generated at '.date('Y M d h:i A')." by ".Auth::user()->name);
+      $sheet->mergeCells("A1:I1");
+      $sheet->setCellValue('A2', $user->name.' JOB LIST');
+      $sheet->mergeCells("A2:I2");
+
+      $sheet->setCellValue('A3', "PICK UP LOCATION");
+      $sheet->setCellValue('B3', "NAME");
+      $sheet->setCellValue('C3', "CONTACT NUMBER");
+      $sheet->setCellValue('D3', "ADDRESS");
+      $sheet->setCellValue('E3', "POSTAL CODE");
+      $sheet->setCellValue('F3', "REMARKS");
+      $sheet->setCellValue('G3', "STATUS");
+      $sheet->setCellValue('H3', "ASSIGNED DATE");
+      $sheet->setCellValue('I3', "DELIVERED DATE");
+
+      $started_row = 4;
+      foreach($driver_jobs as $job)
+      {
+        if(!$job->status)
+        {
+          $job->status = "new job";
+        }
+
+        $sheet->setCellValue('A'.$started_row, $job->pick_up);
+        $sheet->setCellValue('B'.$started_row, $job->name);
+        $sheet->setCellValue('C'.$started_row, $job->contact_number);
+        $sheet->setCellValue('D'.$started_row, $job->address);
+        $sheet->setCellValue('E'.$started_row, $job->postal_code);
+        $sheet->setCellValue('F'.$started_row, $job->remarks);
+        $sheet->setCellValue('G'.$started_row, ucfirst($job->status));
+        $sheet->setCellValue('H'.$started_row, $job->assigned_at);
+        $sheet->setCellValue('I'.$started_row, $job->completed_at);
+
+        $started_row++;
+      }
+
+      $sheet->getStyle("A3:I3")->getFont()->setBold( true );
+      $sheet->getStyle('A3:I'. ($started_row - 1) )->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+      $sheet->getColumnDimension('A')->setWidth(20);
+      $sheet->getColumnDimension('B')->setWidth(20);
+      $sheet->getColumnDimension('C')->setWidth(20);
+      $sheet->getColumnDimension('D')->setWidth(40);
+      $sheet->getColumnDimension('E')->setWidth(15);
+      $sheet->getColumnDimension('F')->setWidth(20);
+      $sheet->getColumnDimension('G')->setWidth(20);
+      $sheet->getColumnDimension('H')->setWidth(20);
+      $sheet->getColumnDimension('I')->setWidth(20);
+
+      $writer = new Xlsx($spreadsheet);
+      $path = "format/import job format result.xlsx";
+
+      app('App\Http\Controllers\DeliveryController')->storeExcel($writer, $path);
+      
+      return Storage::download($path);
     }
 }

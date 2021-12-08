@@ -803,6 +803,8 @@ class DeliveryController extends Controller
 
       $date_from = $today;
       $date_to = $today;
+      $status_filter = null;
+      $driver_id = null;
 
       if(isset($_GET['date_from']))
       {
@@ -814,9 +816,21 @@ class DeliveryController extends Controller
         $date_to = $_GET['date_to'];
       }
 
-      $driver_jobs = app('App\Http\Controllers\DriverController')->driverJobsList(0, 1, $date_from, $date_to);
+      if(isset($_GET['driver']))
+      {
+        $driver_id = $_GET['driver'];
+      }
 
-      return view('delivery.jobs_list', compact('date_from', 'date_to', 'driver_jobs'));
+      if(isset($_GET['status']))
+      {
+        $status_filter = $_GET['status'];
+      }
+
+      $driver_jobs = app('App\Http\Controllers\DriverController')->driverJobsList(0, 1, $date_from, $date_to, $driver_id, $status_filter);
+      $driver_status = app('App\Http\Controllers\DriverController')->driverStatus();
+      $driver_list = User::where('user_type', 'driver')->get();
+
+      return view('delivery.jobs_list', compact('date_from', 'date_to', 'driver_jobs', 'driver_status', 'driver_list', 'status_filter', 'driver_id'));
     }
 
     public function checkOnline(Request $request)
@@ -1294,6 +1308,7 @@ class DeliveryController extends Controller
         ]);
         
         $driver_list = User::where('user_type', 'driver')->get();
+        $now = date('Y-m-d H:i:s');
         foreach($request->job_id as $job_id)
         {
           $job_id_name = "job_id_".$job_id;
@@ -1311,7 +1326,8 @@ class DeliveryController extends Controller
 
           Driver_jobs::where('id', $job_id)->update([
             'driver' => $driver_detail->name,
-            'driver_id' => $driver_detail->id
+            'driver_id' => $driver_detail->id,
+            'assigned_at' => $now
           ]);
         }
       }

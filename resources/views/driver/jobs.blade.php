@@ -24,6 +24,7 @@
                   <th>Contact Number</th>
                   <th>Address</th>
                   <th>Expected Delivery Date Time</th>
+                  <th>Job Assigned Date</th>
                   <th>Wallet Value</th>
                   <th style="min-width: 100px;">Action</th>
                 </thead>
@@ -41,11 +42,16 @@
                           {{ $job->est_delivery_from_text }} - {{ $job->est_delivery_to_text }}
                         @endif
                       </td>
+                      <td data-order="{{ $job->assigned_at }}">
+                        @if($job->assigned_at)
+                          {{ date('d M Y h:i A', strtotime($job->assigned_at)) }}
+                        @endif
+                      </td>
                       <td>S$ {{ number_format($job->price, 2) }}</td>
                       <td>
                         @if($job->status == "new job")
                           <span style="color: red;">Please upload arrive proof before you proceed.</span>
-                        @else
+                        @elseif($job->completed == null)
                           @if(!$have_job)
                             <button class="btn btn-primary select" onclick="selectJob(this)" job_id="{{ $job->id }}">Select</button>
                             <button class="btn btn-danger cancel" onclick="cancelJob(this)" job_id="{{ $job->id }}">Cancel</button>
@@ -59,6 +65,11 @@
 
                             <button class="btn btn-danger cancel" job_id="{{ $job->id }}" onclick="cancelJob(this)" style="display: {{ $job->status == 'starting' ? 'none' : '' }};" {{ $job->status == 'starting' ? 'disabled' : '' }}>Cancel</button>
                           @endif
+                        @else
+                          <span style="color: green;">
+                            Jobs completed. <br>
+                            <span>Completed at : {{ $job->assigned_at_text }}</span>
+                          </span>
                         @endif
                       </td>
                     </tr>
@@ -84,6 +95,12 @@
             </div>
           </div>
         @endforeach
+
+        <div class="col-sm-12 col-md-6" style="margin-top: 20px;">
+          <a href="{{ route('downloadDriverJobs') }}" type="button" class="btn btn-primary">
+            <i class="fas fa-file-export"></i>Export Job list
+          </a>
+        </div>
       </div>
 
       <hr style="margin-bottom: 5px;" />
@@ -152,13 +169,19 @@
               </tr>
               <tr>
                 <td colspan="3">
-                  <label style="display: block;">POD (Unit number with items)</label>
+                  <label style="display: block;">POD (Unit number with items)
+                    <span class="required"></span>
+                  </label>
                   <input type="file" name="file_pod[]" accept="image/*" required multiple />
                 </td>
               </tr>
               <tr>
                 <td colspan="3">
-                  <label style="display: block;">Customer Signature</label>
+                  <label style="display: block;">Customer Signature
+                    @if($user->user_type == "driver" && $user->driver_type != "contractor")
+                      <span class="required"></span>
+                    @endif
+                  </label>
                   <button type="button" class="btn btn-primary" id="signature_btn">Signature</button>
                   <div id="signature_img_box" style="display: none; text-align: center; padding: 10px 0;">
                     <div style="display: inline-block; border: 1px solid #000;">
@@ -239,10 +262,11 @@
       <div class="description">Sign above</div>
 
       <div class="signature-pad--actions">
-        <div>
-          <button class="btn btn-primary" id="clear_signature">Clear</button>
+        <div style="width: 100%; text-align: left;">
+          <button class="btn btn-secondary" id="clear_signature">Clear</button>
           <button class="btn btn-primary" id="undo_signature">Undo</button>
           <button class="btn btn-success" id="submit_signature">Sign</button>
+          <button class="btn btn-danger" style="float: right;" id="close_signature">Close</button>
         </div>
       </div>
     </div>
@@ -255,6 +279,7 @@
   let jobs_table = [];
   var driver_jobs = @json($driver_jobs);
   var pick_up_list = @json($pick_up_list);
+  var user = @json($user);
   var marker_count = 0;
   var markers = [];
   var marker_array = [];
@@ -289,6 +314,11 @@
       }
     });
 
+    $("#close_signature").click(function(){
+      $(".signature_box").removeClass("active");
+      $("#completeModal").modal('show');
+    });
+
     $("#submit_signature").click(function(){
       if (signaturePad.isEmpty()) {
         showError("Client signature is compulsory.", 0);
@@ -316,22 +346,29 @@
         return;
       }
 
-      if(!signaturePad)
+      if(user.user_type == "driver" && user.driver_type != "contractor")
       {
-        showError("Client signature is compulsory.", 0);
-        return;
-      }
-      else
-      {
-        if(signaturePad.isEmpty())
+        if(!signaturePad)
         {
           showError("Client signature is compulsory.", 0);
           return;
         }
         else
         {
-          $("#submitCompleteJobForm").submit();
+          if(signaturePad.isEmpty())
+          {
+            showError("Client signature is compulsory.", 0);
+            return;
+          }
+          else
+          {
+            $("#submitCompleteJobForm").submit();
+          }
         }
+      }
+      else
+      {
+        $("#submitCompleteJobForm").submit();
       }
     });
 
@@ -599,6 +636,7 @@
         }
 
         html += '</td>';
+        html += "<td>"+job.assigned_at_text+"</td>";
         html += '<td>S$ '+job.price_text+'</td>';
 
         html += "<td>";
@@ -606,7 +644,7 @@
         {
           html += "<span style='color: red;'>Please upload arrive proof before you proceed.</span>";
         }
-        else
+        else if(job.completed == null)
         {
           if(!have_job)
           {
@@ -633,6 +671,10 @@
             }
             html += '<button class="btn btn-danger cancel" job_id="'+job.id+'" style="display: '+display+';" '+disabled+' onclick="cancelJob(this)">Cancel</button>';
           }
+        }
+        else
+        {
+          html += "<span style='color: green;'>Jobs completed.<br><span>Completed at : "+job.assigned_at_text+"</span></span>";
         }
         
         html += '</td>';
@@ -721,6 +763,15 @@
   {
     var job_id = $(_this).attr("job_id");
     $("input[name='job_id']").val(job_id);
+
+    $("input[name='file_pod[]']").val("");
+    if(signaturePad)
+    {
+      signaturePad.clear();
+      $("#signature_img_box").hide();
+      document.getElementById('signature_img').src = "";
+    }
+
     $("#completeModal").modal('show');
   }
 

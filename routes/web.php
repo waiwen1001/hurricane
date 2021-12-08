@@ -89,6 +89,7 @@ Route::group(['middleware' => ['auth:web'] ], function(){
     Route::post('/driverStartJobs', 'DriverController@driverStartJobs')->name('driverStartJobs');
     Route::post('/submitCompleteJob', 'DriverController@submitCompleteJob')->name('submitCompleteJob');
     Route::post('/cancelJob', 'DriverController@cancelJob')->name('cancelJob');
+    Route::get('/downloadDriverJobs', 'DriverController@downloadDriverJobs')->name('downloadDriverJobs');
   });
 
   Route::post('/checkOnline', 'DeliveryController@checkOnline')->name('checkOnline');

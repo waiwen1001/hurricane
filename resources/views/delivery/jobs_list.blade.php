@@ -27,7 +27,7 @@
     <div class="row">
       <div class="col-6">
         <div class="form-group">
-          <label>Date from</label>
+          <label>Date From</label>
           <input type="date" class="form-control" name="date_from" value="{{ $date_from }}" />
         </div>
       </div>
@@ -36,6 +36,30 @@
         <div class="form-group">
           <label>Date To</label>
           <input type="date" class="form-control" name="date_to" value="{{ $date_to }}" />
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="form-group">
+          <label>Driver</label>
+          <select name="driver" class="form-control">
+            <option value="0">Select all</option>
+            @foreach($driver_list as $driver)
+              <option value="{{ $driver->id }}" {{ $driver_id == $driver->id ? 'selected' : '' }}>{{ $driver->name }}</option>
+            @endforeach
+          </select>
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status" class="form-control" style="text-transform: capitalize;">
+            <option value="0">Select all</option>
+            @foreach($driver_status as $status)
+              <option value="{{ $status['status'] }}" {{ $status_filter == $status['status'] ? 'selected' : '' }}>{{ $status['status'] }}</option>
+            @endforeach
+          </select>
         </div>
       </div>
     </div>

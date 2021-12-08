@@ -83,11 +83,41 @@
                 </select>
               </div>
             </div>
+
+            <div class="row form-group" id="driver_type" style="display: none;">
+              <div class="col-4"></div>
+              <div class="col-8">
+                <div class="checkbox icheck">
+                  <label style="font-weight: bold;">
+                    <input class="form-check-input" type="checkbox" name="driver_type" value="contractor" /> Contractor
+                  </label>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
         <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>
+        <a href="{{ route('login') }}" type="button" class="btn btn-secondary" style="width: 100%; margin-top: 15px;">Back to login page</a>
       </form>
     </div>
   </div>
+
+  <script>
+    
+    $(document).ready(function(){
+      $("select[name='user_type']").change(function(){
+        if($(this).val() == "driver")
+        {
+          $("#driver_type").show();
+        }
+        else
+        {
+          $("#driver_type").hide();
+        }
+      });
+    });
+
+  </script>
 
 @endsection

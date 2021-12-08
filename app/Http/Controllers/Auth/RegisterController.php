@@ -65,6 +65,7 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
+        $driver_type = null;
         if($data['user_type'] == "delivery")
         {
           $this->redirectTo = RouteServiceProvider::ADMIN;
@@ -76,10 +77,15 @@ class RegisterController extends Controller
         elseif($data['user_type'] == "driver")
         {
           $this->redirectTo = RouteServiceProvider::DRIVER;
+          if(isset($data['driver_type']))
+          {
+            $driver_type = $data['driver_type'];
+          }
         }
 
         return User::create([
             'user_type' => $data['user_type'],
+            'driver_type' => $driver_type,
             'name' => $data['name'],
             'username' => $data['username'],
             'email' => $data['email'],
