@@ -26,6 +26,9 @@
               <a href="{{ route('getAdminJobsList') }}">Jobs List</a>
             </div>
             <div class="menu_btn">
+              <a href="{{ route('getAdminCalendar') }}">Calendar</a>
+            </div>
+            <div class="menu_btn">
               <a href="{{ route('getAdminAutoRoute') }}">Auto Route</a>
             </div>
             <div class="menu_btn">

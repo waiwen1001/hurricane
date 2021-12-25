@@ -123,4 +123,3 @@ tr.ember { background-color: rgb(255 87 34 / 10%) !important; }
 .required::before { content: "*"; color: red; }
 
 
-

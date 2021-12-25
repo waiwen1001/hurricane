@@ -5,78 +5,86 @@
 @include('driver.header')
 
 <div style="padding: 10px 20px 30px 20px;">
-  <div class="row">
+  <div class="row accordion" id="accordion">
     @foreach($pick_up_list as $pick_up)
       @if(count($pick_up->job_list) > 0)
-        <div class="col-sm-12 col-lg-6" style="margin-bottom: 20px;">
+        <div class="col-12" style="margin-bottom: 20px;">
           <div class="jobs_box">
-            <div style="display: inline-block; width: 100%; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
-              <label style="margin: 0px; line-height: 38px; font-weight: bold;">Pick up location : {{ $pick_up->name }}</label>
-              @if($pick_up->disabled == 1)
-                <button type="button" class="btn btn-primary arrive_proof" style="float: right;" pick_up_id="{{ $pick_up->id }}" pick_up_name="{{ $pick_up->name }}">Arrive proof</button>
-              @endif
-            </div>
-            <div>
-              <table class="jobs_table table table-bordered table-striped" pick_up_id="{{ $pick_up->id }}" cellspacing="0" width="100%">
-                <thead>
-                  <th></th>
-                  <th>Name</th>
-                  <th>Contact Number</th>
-                  <th>Address</th>
-                  <th>Expected Delivery Date Time</th>
-                  <th>Job Assigned Date</th>
-                  <th>Wallet Value</th>
-                  <th style="min-width: 100px;">Action</th>
-                </thead>
-                <tbody>
-                  @foreach($pick_up->job_list as $job)
-                    <tr>
-                      <td data-order="{{ $job->status == 'starting' ? '0' : '1' }}">
-                        <div class="status_icon" style="background: {{ $job->color }}"></div>
-                      </td>
-                      <td>{{ $job->name }}</td>
-                      <td>{{ $job->contact_number }}</td>
-                      <td>{{ $job->address }}</td>
-                      <td>
-                        @if($job->est_delivery_from && $job->est_delivery_from)
-                          {{ $job->est_delivery_from_text }} - {{ $job->est_delivery_to_text }}
-                        @endif
-                      </td>
-                      <td data-order="{{ $job->assigned_at }}">
-                        @if($job->assigned_at)
-                          {{ date('d M Y h:i A', strtotime($job->assigned_at)) }}
-                        @endif
-                      </td>
-                      <td>S$ {{ number_format($job->price, 2) }}</td>
-                      <td>
-                        @if($job->status == "new job")
-                          <span style="color: red;">Please upload arrive proof before you proceed.</span>
-                        @elseif($job->completed == null)
-                          @if(!$have_job)
-                            <button class="btn btn-primary select" onclick="selectJob(this)" job_id="{{ $job->id }}">Select</button>
-                            <button class="btn btn-danger cancel" onclick="cancelJob(this)" job_id="{{ $job->id }}">Cancel</button>
-                          @else
-                            @if($job->status == "starting")
-                              <button class="btn btn-success complete" job_id="{{ $job->id }}" onclick="completeJob(this)">Complete</button>
-                              <button class="btn btn-secondary direction" direction="{{ $job->postal_code }}" onclick="jobDirection(this)">Direction</button>
-                            @else
-                              <button class="btn btn-primary select" job_id="{{ $job->id }}" disabled onclick="selectJob(this)">Select</button>
-                            @endif
 
-                            <button class="btn btn-danger cancel" job_id="{{ $job->id }}" onclick="cancelJob(this)" style="display: {{ $job->status == 'starting' ? 'none' : '' }};" {{ $job->status == 'starting' ? 'disabled' : '' }}>Cancel</button>
-                          @endif
-                        @else
-                          <span style="color: green;">
-                            Jobs completed. <br>
-                            <span>Completed at : {{ $job->assigned_at_text }}</span>
-                          </span>
-                        @endif
-                      </td>
-                    </tr>
-                  @endforeach
-                </tbody>
-              </table>
+            <div class="card">
+              <div class="card-header" id="headingTwo">
+                <h5 class="mb-0" data-toggle="collapse" data-target="#collapse_{{ $pick_up->id }}" aria-expanded="true" aria-controls="collapse_{{ $pick_up->id }}" style="cursor: pointer;">
+                  Pick up location : {{ $pick_up->name }}
+                  @if($pick_up->disabled == 1)
+                    <button type="button" class="btn btn-primary arrive_proof" style="float: right;" pick_up_id="{{ $pick_up->id }}" pick_up_name="{{ $pick_up->name }}">Arrive proof</button>
+                  @endif
+                </h5>
+              </div>
+              <div id="collapse_{{ $pick_up->id }}" class="collapse show" aria-labelledby="heading_{{ $pick_up->id }}" data-parent="#accordion">
+                <div class="card-body">
+                  <table class="jobs_table table table-bordered table-striped" pick_up_id="{{ $pick_up->id }}" cellspacing="0" width="100%">
+                    <thead>
+                      <th></th>
+                      <th>Name</th>
+                      <th>Contact Number</th>
+                      <th>Address</th>
+                      <th>Expected Delivery Date Time</th>
+                      <th>Job Assigned Date</th>
+                      <th>Wallet Value</th>
+                      <th style="min-width: 100px;">Action</th>
+                    </thead>
+                    <tbody>
+                      @foreach($pick_up->job_list as $job)
+                        <tr>
+                          <td data-order="{{ $job->status == 'starting' ? '0' : '1' }}">
+                            <div class="status_icon" style="background: {{ $job->color }}"></div>
+                          </td>
+                          <td>{{ $job->name }}</td>
+                          <td>{{ $job->contact_number }}</td>
+                          <td>{{ $job->address }}</td>
+                          <td>
+                            @if($job->est_delivery_from && $job->est_delivery_from)
+                              {{ $job->est_delivery_from_text }} - {{ $job->est_delivery_to_text }}
+                            @endif
+                          </td>
+                          <td data-order="{{ $job->assigned_at }}">
+                            @if($job->assigned_at)
+                              {{ date('d M Y h:i A', strtotime($job->assigned_at)) }}
+                            @endif
+                          </td>
+                          <td>S$ {{ number_format($job->price, 2) }}</td>
+                          <td>
+                            @if($job->status == "new job")
+                              <span style="color: red;">Please upload arrive proof before you proceed.</span>
+                            @elseif($job->completed == null)
+                              @if(!$have_job)
+                                <button class="btn btn-primary select" onclick="selectJob(this)" job_id="{{ $job->id }}">Select</button>
+                                <button class="btn btn-danger cancel" onclick="cancelJob(this)" job_id="{{ $job->id }}">Cancel</button>
+                              @else
+                                @if($job->status == "starting")
+                                  <button class="btn btn-success complete" job_id="{{ $job->id }}" onclick="completeJob(this)">Complete</button>
+                                  <button class="btn btn-secondary direction" direction="{{ $job->postal_code }}" onclick="jobDirection(this)">Direction</button>
+                                @else
+                                  <button class="btn btn-primary select" job_id="{{ $job->id }}" disabled onclick="selectJob(this)">Select</button>
+                                @endif
+
+                                <button class="btn btn-danger cancel" job_id="{{ $job->id }}" onclick="cancelJob(this)" style="display: {{ $job->status == 'starting' ? 'none' : '' }};" {{ $job->status == 'starting' ? 'disabled' : '' }}>Cancel</button>
+                              @endif
+                            @else
+                              <span style="color: green;">
+                                Jobs completed. <br>
+                                <span>Completed at : {{ $job->assigned_at_text }}</span>
+                              </span>
+                            @endif
+                          </td>
+                        </tr>
+                      @endforeach
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
       @endif
@@ -346,30 +354,32 @@
         return;
       }
 
-      if(user.user_type == "driver" && user.driver_type != "contractor")
-      {
-        if(!signaturePad)
-        {
-          showError("Client signature is compulsory.", 0);
-          return;
-        }
-        else
-        {
-          if(signaturePad.isEmpty())
-          {
-            showError("Client signature is compulsory.", 0);
-            return;
-          }
-          else
-          {
-            $("#submitCompleteJobForm").submit();
-          }
-        }
-      }
-      else
-      {
-        $("#submitCompleteJobForm").submit();
-      }
+      // if(user.user_type == "driver" && user.driver_type != "contractor")
+      // {
+      //   if(!signaturePad)
+      //   {
+      //     showError("Client signature is compulsory.", 0);
+      //     return;
+      //   }
+      //   else
+      //   {
+      //     if(signaturePad.isEmpty())
+      //     {
+      //       showError("Client signature is compulsory.", 0);
+      //       return;
+      //     }
+      //     else
+      //     {
+      //       $("#submitCompleteJobForm").submit();
+      //     }
+      //   }
+      // }
+      // else
+      // {
+      //   $("#submitCompleteJobForm").submit();
+      // }
+
+      $("#submitCompleteJobForm").submit();
     });
 
     initMap_timeout = setTimeout(function(){

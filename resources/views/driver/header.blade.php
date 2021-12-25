@@ -20,6 +20,12 @@
               <a href="{{ route('getDriverPickUp') }}">Pick Up</a>
             </div>
             <div class="menu_btn">
+              <a href="{{ route('getDriverJobsList') }}">Jobs List</a>
+            </div>
+            <div class="menu_btn">
+              <a href="{{ route('getDriverCalendar') }}">Calendar</a>
+            </div>
+            <div class="menu_btn">
               <a href="{{ route('manual_logout') }}">Logout</a>
             </div>
 

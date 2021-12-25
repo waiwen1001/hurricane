@@ -7,7 +7,7 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Delivery</title>
+    <title>Hurricane</title>
 
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.gstatic.com">
@@ -34,6 +34,9 @@
     <link rel="stylesheet" href="{{ asset('assets/signature/css/signature-pad.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/jquery-ui/jquery-ui.css') }}">
 
+    <!-- fullCalendar -->
+    <link rel="stylesheet" href="{{ asset('assets/fullcalendar/css/main.css') }}">
+
     <!-- Fontawesome -->
     <script src="https://kit.fontawesome.com/e5dc55166e.js" crossorigin="anonymous"></script>
 
@@ -56,6 +59,9 @@
     <script src="{{ asset('assets/select2/js/select2.full.min.js') }}"></script>
     <script src="{{ asset('assets/jquery-ui/jquery-ui.js') }}"></script>
     <script src="{{ asset('assets/js/main.js') }}"></script>
+
+    <!-- fullCalendar -->
+    <script src="{{ asset('assets/fullcalendar/js/main.js') }}"></script>
 
   </head>
   <body>

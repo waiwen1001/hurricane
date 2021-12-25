@@ -826,7 +826,7 @@ class DeliveryController extends Controller
         $status_filter = $_GET['status'];
       }
 
-      $driver_jobs = app('App\Http\Controllers\DriverController')->driverJobsList(0, 1, $date_from, $date_to, $driver_id, $status_filter);
+      $driver_jobs = app('App\Http\Controllers\DriverController')->driverJobsList(0, 1, 1, $date_from, $date_to, $driver_id, $status_filter);
       $driver_status = app('App\Http\Controllers\DriverController')->driverStatus();
       $driver_list = User::where('user_type', 'driver')->get();
 
@@ -1347,5 +1347,72 @@ class DeliveryController extends Controller
       $response->message = "Jobs deleted.";
 
       return response()->json($response);
+    }
+
+    public function getAdminCalendar()
+    {
+      $driver_jobs = Driver_jobs::get();
+      $driverStatus = app('App\Http\Controllers\DriverController')->driverStatus();
+
+      $events = [];
+      foreach($driver_jobs as $job)
+      {
+        $job->status_text = ucfirst($job->status);
+        $expected_delivery = "";
+        if($job->est_delivery_from && $job->est_delivery_to)
+        {
+          $expected_delivery = date("d M Y h:i A", strtotime($job->est_delivery_from))." - ".date('d M Y h:i A', strtotime($job->est_delivery_to));
+        }
+
+        $job->expected_delivery = $expected_delivery;
+        $job->assigned_at_text = ($job->assigned_at ? date('d M Y h:i A', strtotime($job->assigned_at)) : "");
+        $job->created_at_text = date('d M Y h:i A', strtotime($job->created_at));
+
+        $job_date = date('Y-m-d', strtotime($job->created_at));
+
+        $event_found = false;
+        foreach($events as $e_key => $event)
+        {
+          if($event->start == $job_date && $event->status == $job->status)
+          {
+            $events[$e_key]->count++;
+            array_push($events[$e_key]->extendedProps->id_array, $job->id);
+            $event_found = true;
+            break;
+          }
+        }
+
+        if($event_found == false)
+        {
+          $new_event = new \stdClass();
+          $new_event->start = $job_date;
+          $new_event->count = 1;
+          $new_event->status = $job->status;
+
+          $extends = new \stdClass();
+          $extends->id_array = [$job->id];
+
+          $new_event->extendedProps = $extends;
+          $new_event->color = "";
+
+          foreach($driverStatus as $status)
+          {
+            if($status['status'] == $job->status)
+            {
+              $new_event->color = $status['color'];
+              break;
+            }
+          }
+
+          array_push($events, $new_event);
+        }
+      }
+
+      foreach($events as $event)
+      {
+        $event->title = $event->count." ( ".$event->status." ) ";
+      }
+
+      return view('delivery.calendar', compact('driver_jobs', 'events'));
     }
 }

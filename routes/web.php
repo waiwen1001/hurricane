@@ -69,6 +69,7 @@ Route::group(['middleware' => ['auth:web'] ], function(){
     Route::post('/assignDriver', 'DeliveryController@assignDriver')->name('assignDriver');
 
     Route::post('/deleteJob', 'DeliveryController@deleteJob')->name('deleteJob');
+    Route::get('/calendar', 'DeliveryController@getAdminCalendar')->name('getAdminCalendar');
   });
 
   Route::prefix('order')->group(function () {
@@ -90,6 +91,8 @@ Route::group(['middleware' => ['auth:web'] ], function(){
     Route::post('/submitCompleteJob', 'DriverController@submitCompleteJob')->name('submitCompleteJob');
     Route::post('/cancelJob', 'DriverController@cancelJob')->name('cancelJob');
     Route::get('/downloadDriverJobs', 'DriverController@downloadDriverJobs')->name('downloadDriverJobs');
+    Route::get('/calendar', 'DriverController@getDriverCalendar')->name('getDriverCalendar');
+    Route::get('/jobs_list', 'DriverController@getDriverJobsList')->name('getDriverJobsList');
   });
 
   Route::post('/checkOnline', 'DeliveryController@checkOnline')->name('checkOnline');

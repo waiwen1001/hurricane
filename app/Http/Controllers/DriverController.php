@@ -184,11 +184,16 @@ class DriverController extends Controller
       $now = date("Y-m-d H:i:s");
 
       $proceed = false;
-      if($user->user_type == "driver" && $user->driver_type == "contractor" && $request->file_pod && $request->job_id)
-      {
-        $proceed = true;
-      }
-      elseif($request->file_pod && $request->job_id && $request->signature)
+      // if($user->user_type == "driver" && $user->driver_type == "contractor" && $request->file_pod && $request->job_id)
+      // {
+      //   $proceed = true;
+      // }
+      // elseif($request->file_pod && $request->job_id && $request->signature)
+      // {
+      //   $proceed = true;
+      // }
+
+      if($request->file_pod && $request->job_id)
       {
         $proceed = true;
       }
@@ -287,16 +292,36 @@ class DriverController extends Controller
       return response()->json($response);
     }
 
-    public function driverJobsList($driver = 1, $admin = 0, $date_from = null, $date_to = null, $driver_id = null, $status = null)
+    public function driverJobsList($driver = 1, $admin = 0, $full_list = null, $date_from = null, $date_to = null, $driver_id = null, $status = null)
     {
       $user = Auth::user();
       $now = date("Y-m-d H:i:s");
 
       if($driver == 1)
       {
-        $driver_jobs = Driver_jobs::where(function($query) use ($now){
-          $query->where('completed', null)->orWhereDate('completed_at', date('Y-m-d', strtotime($now)));
-        })->where('driver_id', $user->id)->get();
+        if($full_list == 1)
+        {
+          $driver_jobs = Driver_jobs::whereBetween('created_at', [($date_from." 00:00:00"), ($date_to." 23:59:59")])->where(function($query) use ($status, $user){
+            $query->where('driver_id', $user->id);
+            if($status != "0")
+            {
+              if($status == "new job")
+              {
+                $query->where('status', null);
+              }
+              else
+              {
+                $query->where('status', $status);
+              }
+            }
+          })->get();
+        }
+        else
+        {
+          $driver_jobs = Driver_jobs::where(function($query) use ($now){
+            $query->where('completed', null)->orWhereDate('completed_at', date('Y-m-d', strtotime($now)));
+          })->where('driver_id', $user->id)->get();
+        }
       }
       elseif($admin == 1)
       {
@@ -548,5 +573,104 @@ class DriverController extends Controller
       app('App\Http\Controllers\DeliveryController')->storeExcel($writer, $path);
       
       return Storage::download($path);
+    }
+
+    public function getDriverCalendar()
+    {
+      $user = Auth::user();
+      $driver_jobs = Driver_jobs::where('driver_id', $user->id)->get();
+      $driverStatus = $this->driverStatus();
+
+      $events = [];
+      foreach($driver_jobs as $job)
+      {
+        $job->status_text = ucfirst($job->status);
+        $expected_delivery = "";
+        if($job->est_delivery_from && $job->est_delivery_to)
+        {
+          $expected_delivery = date("d M Y h:i A", strtotime($job->est_delivery_from))." - ".date('d M Y h:i A', strtotime($job->est_delivery_to));
+        }
+
+        $job->expected_delivery = $expected_delivery;
+        $job->assigned_at_text = ($job->assigned_at ? date('d M Y h:i A', strtotime($job->assigned_at)) : "");
+        $job->created_at_text = date('d M Y h:i A', strtotime($job->created_at));
+
+        $job_date = date('Y-m-d', strtotime($job->created_at));
+
+        $event_found = false;
+        foreach($events as $e_key => $event)
+        {
+          if($event->start == $job_date && $event->status == $job->status)
+          {
+            $events[$e_key]->count++;
+            array_push($events[$e_key]->extendedProps->id_array, $job->id);
+            $event_found = true;
+            break;
+          }
+        }
+
+        if($event_found == false)
+        {
+          $new_event = new \stdClass();
+          $new_event->start = $job_date;
+          $new_event->count = 1;
+          $new_event->status = $job->status;
+
+          $extends = new \stdClass();
+          $extends->id_array = [$job->id];
+
+          $new_event->extendedProps = $extends;
+          $new_event->color = "";
+
+          foreach($driverStatus as $status)
+          {
+            if($status['status'] == $job->status)
+            {
+              $new_event->color = $status['color'];
+              break;
+            }
+          }
+
+          array_push($events, $new_event);
+        }
+      }
+
+      foreach($events as $event)
+      {
+        $event->title = $event->count." ( ".$event->status." ) ";
+      }
+
+      return view('driver.calendar', compact('driver_jobs', 'events'));
+    }
+
+    public function getDriverJobsList()
+    {
+      $today = date('Y-m-d');
+
+      $date_from = $today;
+      $date_to = $today;
+      $status_filter = null;
+
+      if(isset($_GET['date_from']))
+      {
+        $date_from = $_GET['date_from'];
+      }
+
+      if(isset($_GET['date_to']))
+      {
+        $date_to = $_GET['date_to'];
+      }
+
+      if(isset($_GET['status']))
+      {
+        $status_filter = $_GET['status'];
+      }
+
+      $driver_jobs_info = $this->driverJobsList(1, 0, 1, $date_from, $date_to, null, $status_filter);
+
+      $driver_jobs = $driver_jobs_info->driver_jobs;
+      $driver_status = $this->driverStatus();
+
+      return view('driver.jobs_list', compact('date_from', 'date_to', 'driver_jobs', 'driver_status', 'status_filter'));
     }
 }
